@@ -27,7 +27,7 @@ recommended form is a one-column data frame with column name.}
 Each row represents a subject. Each column represent a measurement (time) point.}
 
 \item{data.Z}{Scalar covariate(s),
-can be not input or NULL (when there's no scalar covariate),
+can be not input or \code{NULL} (when there's no scalar covariate),
 an atomic vector (when only one scalar covariate), a matrix or data frame,
 recommended form is a data frame with column name(s).}
 
@@ -40,7 +40,7 @@ Each column represent a measurement (time) point.}
 \item{t_interval}{A 2-element vector, represents an interval,
 means the domain of the functional covariate. Default is c(0,1), represent interval \eqn{[0,1]}.}
 
-\item{t_points}{Sequence of the measurement (time) points, default is NULL.}
+\item{t_points}{Sequence of the measurement (time) points, default is \code{NULL}.}
 
 \item{formula.Z}{A formula without the response variable,
 contains only scalar covariate(s), no random effects. If not assigned,

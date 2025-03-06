@@ -28,7 +28,7 @@ Each column represent a measurement (time) point.
 Each layer represents an observation.}
 
 \item{data.Z}{Scalar covariate(s),
-can be not input or NULL (when there's no scalar covariate),
+can be not input or \code{NULL} (when there's no scalar covariate),
 an atomic vector (when only one scalar covariate),
 a matrix or data frame, recommended form is a data frame with column name(s).}
 
@@ -37,7 +37,7 @@ a matrix or data frame, recommended form is a data frame with column name(s).}
 \item{t_interval}{A 2-element vector, represents an interval,
 means the domain of the functional covariate. Default is c(0,1), represent interval \eqn{[0,1]}.}
 
-\item{t_points}{Sequence of the measurement (time) points, default is NULL.}
+\item{t_points}{Sequence of the measurement (time) points, default is \code{NULL}}
 
 \item{grid_k}{An atomic vector, of which each element is candidate number of basis.}
 
@@ -45,13 +45,13 @@ means the domain of the functional covariate. Default is c(0,1), represent inter
 
 \item{degree}{Used in computation for derivative and integral, defult is 45, large enough for most scenario.}
 
-\item{observed_X}{For estimating parametric variance. Default is NULL.}
+\item{observed_X}{For estimating parametric variance. Default is \code{NULL}.}
 }
 \value{
 Returns a ME.fcQR_CLS class object. It is a list that contains the following elements.
    \item{estimated_beta_hat}{Estimated coefficients from corrected loss function (including functional part)}
    \item{estimated_beta_t}{Estimated functional curve}
-   \item{SE_est}{Estimated parametric variance. Returned only if observed_X is not NULL.}
+   \item{SE_est}{Estimated parametric variance. Returned only if observed_X is not \code{NULL}.}
    \item{estimated_Xbasis}{The basis matrix we used}
    \item{res_naive}{results of naive method}
 }

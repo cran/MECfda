@@ -13,7 +13,7 @@
 #' recommended form is a one-column data frame with column name
 #' @param FC Functional covariate(s),
 #' can be a "functional_variable" object or a matrix or a data frame or a list of these object(s)
-#' @param Z Scalar covariate(s), can be NULL or not input (when there's no scalar covariate),
+#' @param Z Scalar covariate(s), can be \code{NULL} or not input (when there's no scalar covariate),
 #' an atomic vector (when only one scalar covariate), a matrix or data frame,
 #' recommended form is a data frame with column name(s)
 #' @param formula.Z A formula without the response variable, contains only scalar covariate(s).
@@ -21,14 +21,19 @@
 #' @param tau Quantile \eqn{\tau\in(0,1)}, default is 0.5. See \code{\link[quantreg]{rq}}.
 #' @param basis.type Type of funtion basis.
 #' Can only be assigned as one type even if there is more than one functional covariates.
-#' Available options: 'Fourier' or 'Bspline', represent Fourier basis and b-spline basis respectively.
-#' For the detailed form for Fourier and b-splines basis,
-#' see \code{\link{fourier_basis_expansion}} and \code{\link{bspline_basis_expansion}}.
+#' Available options: \code{'Fourier'} or \code{'Bspline'} or \code{'FPC'},
+#' represent Fourier basis, b-spline basis, and functional principal component (FPC) basis respectively.
+#' For the detailed form for Fourier, b-splines, and FPC basis,
+#' see
+#' \code{\link{fourier_basis_expansion}},
+#' \code{\link{bspline_basis_expansion}}, and
+#' \code{\link{FPC_basis_expansion}}.
 #' @param basis.order Indicate number of the function basis.
 #' When using Fourier basis \eqn{\frac{1}{2},\sin k t, \cos k t, k = 1,\dots,K},
-#' basis.order is the number \eqn{K}.
+#' \code{basis.order} is the number \eqn{K}.
 #' When using b-splines basis \eqn{\{B_{i,p}(x)\}_{i=-p}^{k}},
-#' basis.order is the number of splines, equal to \eqn{k+p+1}.
+#' \code{basis.order} is the number of splines, equal to \eqn{k+p+1}.
+#' When using FPC basis, \code{basis.order} is the number of functional principal components.
 #' (same as arguement \code{df} in \code{\link[splines]{bs}}.)
 #' May set a individual number for each functional covariate.
 #' When the element of this argument is less than the number of functional covariates,
@@ -54,8 +59,6 @@
 #'            basis.order = 5, basis.type = c('Bspline'))
 #'
 #' @importFrom methods hasArg
-#' @importFrom stringr str_replace
-#' @importFrom stringr str_detect
 #' @importFrom quantreg rq
 #' @import stats
 #'
@@ -129,6 +132,17 @@ fcQR = function(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c('Fourier','Bsplin
                 colnames(BE_X) = paste(names(fc_list)[i],colnames(BE_X),sep = '.')
                 BE = cbind(BE,BE_X)
               }
+            },
+            'FPC' = {
+              BE = NULL
+              for (i in 1:length(fc_list)) {
+                X = fc_list[[i]]
+                n_k = basis.order[i]
+                BE_X = FPC_basis_expansion(X,n_k)
+                FPC_basis = attr(BE_X,'numeric_basis')
+                colnames(BE_X) = paste(names(fc_list)[i],colnames(BE_X),sep = '.')
+                BE = cbind(BE,BE_X)
+              }
             }
     )
     rm(X,i)
@@ -142,7 +156,8 @@ fcQR = function(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c('Fourier','Bsplin
     fmla = as.formula(paste0(colnames(Y),' ~ .'))
   }else{
     formula.Z = format(formula.Z)
-    formula.Z = str_replace(formula.Z,'~','')
+    # formula.Z = stringr::str_replace(formula.Z,'~','')
+    formula.Z = sub('~','',formula.Z)
     fmla = as.formula(paste0(colnames(Y),' ~ ',
                              paste0(colnames(BE),collapse = ' + '), ' + ',
                              formula.Z
@@ -166,8 +181,10 @@ fcQR = function(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c('Fourier','Bsplin
                 FP_basisCoef = append(FP_basisCoef,
                                       Fourier_series(
                                         double_constant = res.coef[paste(fv_name,'a_0',sep = '.')],
-                                        sin = res.coef[str_detect(names(res.coef),fv_name) & str_detect(names(res.coef),'sin')],
-                                        cos = res.coef[str_detect(names(res.coef),fv_name) & str_detect(names(res.coef),'cos')],
+                                        # sin = res.coef[stringr::str_detect(names(res.coef),fv_name) & stringr::str_detect(names(res.coef),'sin')],
+                                        # cos = res.coef[stringr::str_detect(names(res.coef),fv_name) & stringr::str_detect(names(res.coef),'cos')],
+                                        sin = res.coef[grepl(fv_name,names(res.coef), fixed = TRUE) & grepl('sin',names(res.coef), fixed = TRUE)],
+                                        cos = res.coef[grepl(fv_name,names(res.coef), fixed = TRUE) & grepl('cos',names(res.coef), fixed = TRUE)],
                                         k_sin = 1:n_k,
                                         k_cos = 1:n_k,
                                         t_0 = fc_list[[i]]@t_0,
@@ -176,7 +193,8 @@ fcQR = function(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c('Fourier','Bsplin
               },
               'Bspline' = {
                 FP_basisCoef = append(FP_basisCoef,
-                                      bspline_series(coef = c(res.coef[str_detect(names(res.coef),fv_name) & str_detect(names(res.coef),'bs')]),
+                                      # bspline_series(coef = c(res.coef[stringr::str_detect(names(res.coef),fv_name) & stringr::str_detect(names(res.coef),'bs')]),
+                                      bspline_series(coef = c(res.coef[grepl(fv_name,names(res.coef), fixed = TRUE) & grepl('bs',names(res.coef), fixed = TRUE)]),
                                                      bspline_basis = bspline_basis(
                                                        Boundary.knots = c(fc_list[[i]]@t_0,fc_list[[i]]@t_0 + fc_list[[i]]@period),
 
@@ -184,6 +202,13 @@ fcQR = function(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c('Fourier','Bsplin
                                                        df             = n_k,
                                                        degree         = bs_degree
                                                      )
+                                      ))
+              },
+              'FPC' = {
+                FP_basisCoef = append(FP_basisCoef,
+                                      # numericBasis_series(coef = c(res.coef[stringr::str_detect(names(res.coef),fv_name) & stringr::str_detect(names(res.coef),'FPC')]),
+                                      numericBasis_series(coef = c(res.coef[grepl(fv_name,names(res.coef), fixed = TRUE) & grepl('FPC',names(res.coef), fixed = TRUE)]),
+                                                          numeric_basis = FPC_basis
                                       ))
               }
       )

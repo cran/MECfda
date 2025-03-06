@@ -18,7 +18,7 @@
 #' @param n_splines the number of splines, equal to \eqn{k+p+1}. See \code{df} in \code{\link[splines]{bs}}.
 #' @param bs_degree the degree of the piecewise polynomial of the b-splines. See \code{degree} in \code{\link[splines]{bs}}.
 #'
-#' @return Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}
+#' @return Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}.
 #' @export
 #' @author Heyang Ji
 #' @importFrom splines bs
@@ -42,7 +42,7 @@ setMethod("bspline_basis_expansion",
                                    intercept = TRUE,
                                    Boundary.knots = c(object@t_0, object@t_0 + object@period))
 
-            ip_bs = (object@X%*%bs_basis)/nrow(bs_basis)
+            ip_bs = object@period * (object@X%*%bs_basis)/nrow(bs_basis)
             colnames(ip_bs) = paste0('bs',1:n_splines)
             return(ip_bs)
           })

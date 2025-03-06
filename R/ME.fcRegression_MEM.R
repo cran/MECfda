@@ -18,14 +18,14 @@
 #' Each row represents a subject.
 #' Each column represent a measurement (time) point.
 #' Each layer represents an observation.
-#' @param data.Z Scalar covariate(s), can be not input or NULL (when there's no scalar covariate),
+#' @param data.Z Scalar covariate(s), can be not input or \code{NULL} (when there's no scalar covariate),
 #' an atomic vector (when only one scalar covariate), a matrix or data frame,
 #' recommended form is a data frame with column name(s).
 #' @param method The method to construct the substitution \eqn{X}.
 #' Available options: 'UP_MEM', 'MP_MEM', 'average'.
 #' @param t_interval A 2-element vector, represents an interval,
 #' means the domain of the functional covariate. Default is c(0,1), represent interval \eqn{[0,1]}.
-#' @param t_points Sequence of the measurement (time) points, default is NULL.
+#' @param t_points Sequence of the measurement (time) points, default is \code{NULL}.
 #' @param d The number of time points involved for MP_MEM (default and miniumn is 3).
 #' @param family.W Distribution of \eqn{W} given \eqn{X},  Available options: "gaussian","poisson".
 #' @param family.Y A description of the error distribution
@@ -49,8 +49,8 @@
 #' When the element of this argument is less than the number of functional covariates, it will be used recursively.
 #' @param bs_degree Degree of the piecewise polynomials if use b-splines basis, default is 3.
 #' See \code{degree} in \code{\link[splines]{bs}}.
-#' @param smooth Whether to smooth the substitution of \eqn{X}. Default is FALSE.
-#' @param silent Whether not to show the state of the running of the function. Default is TRUE.
+#' @param smooth Whether to smooth the substitution of \eqn{X}. Default is \code{FALSE}.
+#' @param silent Whether not to show the state of the running of the function. Default is \code{TRUE}.
 #'
 #' @return Returns a \code{fcRegression} object. See \code{\link{fcRegression}}.
 #' @importFrom methods hasArg

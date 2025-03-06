@@ -23,7 +23,7 @@ setClassUnion('num.int.nul',c("numeric","integer","NULL"))
 #' (\eqn{t_j = t_0 + j\cdot\frac{t_{k+1}-t_0}{k+1}}) when not assigned.
 #' See \code{knots} in \code{\link[splines]{bs}}.
 #' @slot intercept Whether an intercept is included in the basis,
-#' default value is TRUE, and must be TRUE. See \code{intercept} \code{\link[splines]{bs}}.
+#' default value is \code{TRUE}, and must be \code{TRUE}. See \code{intercept} \code{\link[splines]{bs}}.
 #' @slot df degree of freedom of the basis, which is the number of the splines, equal to \eqn{p+k+1}.
 #' By default \eqn{k = 0}, and \code{df} \eqn{= p+1}. See \code{df} \code{\link[splines]{bs}}.
 #' @slot degree degree of the splines, which is the degree of piecewise polynomials \eqn{p}, default value is 3.
@@ -120,5 +120,93 @@ Fourier_series = setClass(
     # k_sin           = "ANY",
     t_0             = "numeric",
     period          = "numeric"
+  )
+)
+
+#' @title Numeric representation of a function basis
+#' @description
+#' A s4 class that numerically represents a basis of linear space of function. \cr
+#' \eqn{\{\rho_k\}_{k=1}^\infty} denotes a basis of function linear space.
+#' Some times the basis cannot be expressed analytically.
+#' But we can numerically store the space by the value of
+#' a finite subset of the basis functions at some certain points in the domain,
+#' \eqn{\rho_k(t_j), k = 1,\dots,p, j = 1,\dots,m}.
+#' The s4 class is to represent a finite sequence of functions by their values
+#' at a finite sequence of points within their domain,
+#' in which all the functions have the same domain and the domain is an interval.
+#'
+#' @slot basis_function matrix of the value of the functions,
+#' \eqn{(\zeta_{jk})_{m\times p}},
+#' where \eqn{\zeta_{ik} = \rho_k(t_j), j = 1,\dots,m, k = 1,\dots,p}.
+#' Each row of the matrix is corresponding to a point of \eqn{t}.
+#' Each column of the matrix is corresponding to a basis function.
+#' @slot t_points a numeric atomic vector,
+#' represents the points in the domains of the function
+#' where the function values are taken.
+#' The \eqn{j}th element is corresponding to \eqn{j}th row of
+#' slot \code{basis_function}.
+#' @slot t_0 left end of the domain interval.
+#' @slot period length of the domain interval.
+#' @details
+#' The units of a basis of a linear space should be linearly independent.
+#' But the program doesn't check the linear dependency of the basis function
+#' when a \code{numeric_basis} object is initialized.
+#'
+#' @author Heyang Ji
+#' @export
+#' @import methods
+#' @examples
+#' t_0 = 0
+#' period = 1
+#' t_points = seq(0.05,0.95,length.out = 19)
+#' numeric_basis(
+#'   basis_function = cbind(1/2,cos(t_points),sin(t_points)),
+#'   t_points       = t_points,
+#'   t_0            = t_0,
+#'   period         = period
+#' )
+
+numeric_basis = setClass(
+  "numeric_basis",
+  slots = c(
+    basis_function = "matrix",
+    ## matrix of the value of basis functions
+    ## each column represents a basis function
+    ## each row represents a value of $t$
+    t_points       = "numeric",
+    t_0            = "numeric",
+    period         = "numeric"
+  )
+)
+
+
+#' @title Linear combination of a sequence of basis functions represented numerically
+#' @description
+#' A linear combination of basis function \eqn{\{\rho_k\}_{k=1}^p},
+#' \deqn{\sum_{k=1}^p c_k \rho_k(t).}
+#'
+#' @slot coef linear coefficient \eqn{\{c_k\}_{k=1}^p}.
+#' @slot numeric_basis \eqn{\{\rho_k\}_{k=1}^p} represented by a \code{numeric_basis} object.
+#' See \code{\link{numeric_basis}}.
+#'
+#' @author Heyang Ji
+#' @export
+#' @import methods
+#' @examples
+#' t_0 = 0
+#' period = 1
+#' t_points = seq(0.05,0.95,length.out = 19)
+#' nb = numeric_basis(
+#'   basis_function = cbind(1,cos(t_points),sin(t_points)),
+#'   t_points       = t_points,
+#'   t_0            = t_0,
+#'   period         = period
+#' )
+#' ns = numericBasis_series(coef = c(0.8,1.2,1.6),numeric_basis = nb)
+numericBasis_series = setClass(
+  "numericBasis_series",
+  slots = c(
+    coef = "numeric",
+    numeric_basis  = "numeric_basis"
   )
 )

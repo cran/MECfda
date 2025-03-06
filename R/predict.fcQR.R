@@ -106,6 +106,17 @@ predict.fcQR = function(object,newData.FC,newData.Z = NULL, ...) {
                 colnames(BE_X) = paste(names(newData.fc_list)[i],colnames(BE_X),sep = '.')
                 BE = cbind(BE,BE_X)
               }
+            },
+            'FPC' = {
+              BE = NULL
+              for (i in 1:length(newData.fc_list)) {
+                X = newData.fc_list[[i]]
+                nb = object$FC.BasisCoefficient[[i]]@numeric_basis
+                BE_X = numeric_basis_expansion(X,nb)
+                colnames(BE_X) = gsub('basisFunction','FPC',colnames(BE_X), fixed = TRUE)
+                colnames(BE_X) = paste(names(newData.fc_list)[i],colnames(BE_X),sep = '.')
+                BE = cbind(BE,BE_X)
+              }
             }
     )
     rm(X,i)

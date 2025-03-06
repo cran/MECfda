@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -54,9 +54,9 @@ BE.fs = fourier_basis_expansion(fv,5L)
 BE.bs = bspline_basis_expansion(fv,5L,3L)
 
 ## ----shili1, eval = FALSE-----------------------------------------------------
-#  fcRegression(Y, FC, Z, formula.Z, family = gaussian(link = "identity"),
-#               basis.type = c("Fourier", "Bspline"), basis.order = 6L,
-#               bs_degree = 3)
+# fcRegression(Y, FC, Z, formula.Z, family = gaussian(link = "identity"),
+#              basis.type = c("Fourier", "Bspline"), basis.order = 6L,
+#              bs_degree = 3)
 
 ## ----fcglmm-------------------------------------------------------------------
 data(MECfda.data.sim.0.0)
@@ -74,8 +74,8 @@ predict(object = res, newData.FC = MECfda.data.sim.1.0$FC,
         newData.Z = MECfda.data.sim.1.0$Z)
 
 ## ----shili2, eval = FALSE-----------------------------------------------------
-#  fcQR(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c("Fourier", "Bspline"),
-#       basis.order = 6L, bs_degree = 3)
+# fcQR(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c("Fourier", "Bspline"),
+#      basis.order = 6L, bs_degree = 3)
 
 ## ----fcqr---------------------------------------------------------------------
 data(MECfda.data.sim.0.0)
@@ -93,96 +93,96 @@ predict(object = res, newData.FC = MECfda.data.sim.1.0$FC,
         newData.Z = MECfda.data.sim.1.0$Z)
 
 ## ----shili3, eval = FALSE-----------------------------------------------------
-#  ME.fcRegression_MEM(
-#    data.Y,
-#    data.W,
-#    data.Z,
-#    method = c("UP_MEM", "MP_MEM", "average"),
-#    t_interval = c(0, 1),
-#    t_points = NULL,
-#    d = 3,
-#    family.W = c("gaussian", "poisson"),
-#    family.Y = "gaussian",
-#    formula.Z,
-#    basis.type = c("Fourier", "Bspline"),
-#    basis.order = NULL,
-#    bs_degree = 3,
-#    smooth = FALSE,
-#    silent = TRUE
-#  )
+# ME.fcRegression_MEM(
+#   data.Y,
+#   data.W,
+#   data.Z,
+#   method = c("UP_MEM", "MP_MEM", "average"),
+#   t_interval = c(0, 1),
+#   t_points = NULL,
+#   d = 3,
+#   family.W = c("gaussian", "poisson"),
+#   family.Y = "gaussian",
+#   formula.Z,
+#   basis.type = c("Fourier", "Bspline"),
+#   basis.order = NULL,
+#   bs_degree = 3,
+#   smooth = FALSE,
+#   silent = TRUE
+# )
 
 ## ----MEM, eval = FALSE--------------------------------------------------------
-#  data(MECfda.data.sim.0.1)
-#  res = ME.fcRegression_MEM(data.Y = MECfda.data.sim.0.1$Y,
-#                            data.W = MECfda.data.sim.0.1$W,
-#                            data.Z = MECfda.data.sim.0.1$Z,
-#                            method = 'UP_MEM',
-#                            family.W = "gaussian",
-#                            basis.type = 'Bspline')
+# data(MECfda.data.sim.0.1)
+# res = ME.fcRegression_MEM(data.Y = MECfda.data.sim.0.1$Y,
+#                           data.W = MECfda.data.sim.0.1$W,
+#                           data.Z = MECfda.data.sim.0.1$Z,
+#                           method = 'UP_MEM',
+#                           family.W = "gaussian",
+#                           basis.type = 'Bspline')
 
 ## ----shili4, eval = FALSE-----------------------------------------------------
-#  ME.fcQR_IV.SIMEX(
-#    data.Y,
-#    data.W,
-#    data.Z,
-#    data.M,
-#    tau = 0.5,
-#    t_interval = c(0, 1),
-#    t_points = NULL,
-#    formula.Z,
-#    basis.type = c("Fourier", "Bspline"),
-#    basis.order = NULL,
-#    bs_degree = 3
-#  )
+# ME.fcQR_IV.SIMEX(
+#   data.Y,
+#   data.W,
+#   data.Z,
+#   data.M,
+#   tau = 0.5,
+#   t_interval = c(0, 1),
+#   t_points = NULL,
+#   formula.Z,
+#   basis.type = c("Fourier", "Bspline"),
+#   basis.order = NULL,
+#   bs_degree = 3
+# )
 
 ## ----iv.simex, eval = FALSE---------------------------------------------------
-#  rm(list = ls())
-#  data(MECfda.data.sim.0.2)
-#  res = ME.fcQR_IV.SIMEX(data.Y = MECfda.data.sim.0.2$Y,
-#                         data.W = MECfda.data.sim.0.2$W,
-#                         data.Z = MECfda.data.sim.0.2$Z,
-#                         data.M = MECfda.data.sim.0.2$M,
-#                         tau = 0.5,
-#                         basis.type = 'Bspline')
+# rm(list = ls())
+# data(MECfda.data.sim.0.2)
+# res = ME.fcQR_IV.SIMEX(data.Y = MECfda.data.sim.0.2$Y,
+#                        data.W = MECfda.data.sim.0.2$W,
+#                        data.Z = MECfda.data.sim.0.2$Z,
+#                        data.M = MECfda.data.sim.0.2$M,
+#                        tau = 0.5,
+#                        basis.type = 'Bspline')
 
 ## ----shili5, eval = FALSE-----------------------------------------------------
-#  ME.fcQR_CLS(
-#    data.Y,
-#    data.W,
-#    data.Z,
-#    tau = 0.5,
-#    t_interval = c(0, 1),
-#    t_points = NULL,
-#    grid_k,
-#    grid_h,
-#    degree = 45,
-#    observed_X = NULL
-#  )
+# ME.fcQR_CLS(
+#   data.Y,
+#   data.W,
+#   data.Z,
+#   tau = 0.5,
+#   t_interval = c(0, 1),
+#   t_points = NULL,
+#   grid_k,
+#   grid_h,
+#   degree = 45,
+#   observed_X = NULL
+# )
 
 ## ----cls, eval = FALSE--------------------------------------------------------
-#  rm(list = ls())
-#  data(MECfda.data.sim.0.1)
-#  res = ME.fcQR_CLS(data.Y = MECfda.data.sim.0.1$Y,
-#                    data.W = MECfda.data.sim.0.1$W,
-#                    data.Z = MECfda.data.sim.0.1$Z,
-#                    tau = 0.5,
-#                    grid_k = 4:7,
-#                    grid_h = 1:2)
+# rm(list = ls())
+# data(MECfda.data.sim.0.1)
+# res = ME.fcQR_CLS(data.Y = MECfda.data.sim.0.1$Y,
+#                   data.W = MECfda.data.sim.0.1$W,
+#                   data.Z = MECfda.data.sim.0.1$Z,
+#                   tau = 0.5,
+#                   grid_k = 4:7,
+#                   grid_h = 1:2)
 
 ## ----shili6, eval = FALSE-----------------------------------------------------
-#  ME.fcLR_IV(
-#    data.Y,
-#    data.W,
-#    data.M,
-#    t_interval = c(0, 1),
-#    t_points = NULL,
-#    CI.bootstrap = F
-#  )
+# ME.fcLR_IV(
+#   data.Y,
+#   data.W,
+#   data.M,
+#   t_interval = c(0, 1),
+#   t_points = NULL,
+#   CI.bootstrap = F
+# )
 
 ## ----lriv, eval = FALSE-------------------------------------------------------
-#  rm(list = ls())
-#  data(MECfda.data.sim.0.3)
-#  res = ME.fcLR_IV(data.Y = MECfda.data.sim.0.3$Y,
-#                   data.W = MECfda.data.sim.0.3$W,
-#                   data.M = MECfda.data.sim.0.3$M)
+# rm(list = ls())
+# data(MECfda.data.sim.0.3)
+# res = ME.fcLR_IV(data.Y = MECfda.data.sim.0.3$Y,
+#                  data.W = MECfda.data.sim.0.3$W,
+#                  data.M = MECfda.data.sim.0.3$M)
 

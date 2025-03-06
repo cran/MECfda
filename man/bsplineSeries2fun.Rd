@@ -3,7 +3,7 @@
 \name{bsplineSeries2fun}
 \alias{bsplineSeries2fun}
 \alias{bsplineSeries2fun,bspline_series,numeric-method}
-\title{Compute the value of the Fourier summation series at certain points.}
+\title{Compute the value of the b-splines summation series at certain points.}
 \usage{
 bsplineSeries2fun(object, x)
 
@@ -18,7 +18,7 @@ bsplineSeries2fun(object, x)
 A numeric atomic vector
 }
 \description{
-Compute the value of the Fourier summation series at certain points.
+Compute the function \eqn{f(x) = \sum_{i=0}^{k}b_i B_{i,p}(x)}
 }
 \examples{
 bsb = bspline_basis(

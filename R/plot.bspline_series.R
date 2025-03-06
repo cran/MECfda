@@ -1,5 +1,5 @@
 #' @method plot bspline_series
-#' @title Plot b-splines baisi summation series.
+#' @title Plot b-splines basis summation series.
 #'
 #' @param x A \code{\link{bspline_series}} object.
 #' @return No return value. Generate a scatter plot.
@@ -22,7 +22,7 @@
 setMethod("plot",
           signature(x="bspline_series"),
           function(x){
-            t = x@bspline_basis@Boundary.knots[1] + x@bspline_basis@Boundary.knots[2]*(0:1000/1000)
+            t = x@bspline_basis@Boundary.knots[1] + diff(x@bspline_basis@Boundary.knots)*(0:1000/1000)
             plot(x = t, y = bsplineSeries2fun(x,t),
                  xlab = "Domain",
                  ylab = "Series value",

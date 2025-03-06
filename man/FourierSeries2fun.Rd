@@ -12,7 +12,7 @@ FourierSeries2fun(object, x)
 \arguments{
 \item{object}{an object of \code{\link{Fourier_series}} class.}
 
-\item{x}{Value of $x$.}
+\item{x}{Value of \eqn{x}.}
 }
 \value{
 A numeric atomic vector

@@ -9,7 +9,7 @@
 #' @param object a \code{\link{functional_variable}} class object.
 #' @param order_fourier_basis the order of Fourier basis, \eqn{p_f}.
 #'
-#' @return Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}
+#' @return Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}.
 #' @export
 #' @author Heyang Ji
 setGeneric("fourier_basis_expansion",
@@ -31,12 +31,12 @@ setMethod("fourier_basis_expansion",
 
             {
               t_fourier = 2*pi*(((t_points - object@t_0)/object@period)%*%t(1:order_fourier_basis))
-              a_k = (object@X%*%cos(t_fourier))/nrow(t_fourier)
-              b_k = (object@X%*%sin(t_fourier))/nrow(t_fourier)
+              a_k = object@period * (object@X%*%cos(t_fourier))/nrow(t_fourier)
+              b_k = object@period * (object@X%*%sin(t_fourier))/nrow(t_fourier)
             }
 
 
-            a_0 = rowMeans(object@X)/2
+            a_0 = object@period * rowMeans(object@X)/2
             colnames(a_k) = paste0('cos',1:ncol(a_k))
             colnames(b_k) = paste0('sin',1:ncol(b_k))
             return(cbind(a_0,a_k,b_k))

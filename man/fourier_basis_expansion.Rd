@@ -15,7 +15,7 @@ fourier_basis_expansion(object, order_fourier_basis)
 \item{order_fourier_basis}{the order of Fourier basis, \eqn{p_f}.}
 }
 \value{
-Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}
+Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}.
 }
 \description{
 For a function \eqn{f(x), x\in\Omega}, and a basis function sequence \eqn{\{\rho_k\}_{k\in\kappa}},

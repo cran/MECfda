@@ -9,7 +9,7 @@
 A s4 class that represents data of a function-valued variable.
 The format is
   \eqn{f_i(t),\ t\in\Omega=[t_0,t_0 + T]}
-  where $i$ is the observation (subject) index, $t$ represents the measurement (time) points.
+  where \eqn{i} is the observation (subject) index, \eqn{t} represents the measurement (time) points.
 }
 \section{Slots}{
 

@@ -22,7 +22,7 @@ recommended form is a one-column data frame with column name}
 \item{FC}{Functional covariate(s),
 can be a "functional_variable" object or a matrix or a data frame or a list of these object(s)}
 
-\item{Z}{Scalar covariate(s), can be NULL or not input (when there's no scalar covariate),
+\item{Z}{Scalar covariate(s), can be \code{NULL} or not input (when there's no scalar covariate),
 an atomic vector (when only one scalar covariate), a matrix or data frame,
 recommended form is a data frame with column name(s)}
 
@@ -33,15 +33,20 @@ If not assigned, include all scalar covariates and intercept term.}
 
 \item{basis.type}{Type of funtion basis.
 Can only be assigned as one type even if there is more than one functional covariates.
-Available options: 'Fourier' or 'Bspline', represent Fourier basis and b-spline basis respectively.
-For the detailed form for Fourier and b-splines basis,
-see \code{\link{fourier_basis_expansion}} and \code{\link{bspline_basis_expansion}}.}
+Available options: \code{'Fourier'} or \code{'Bspline'} or \code{'FPC'},
+represent Fourier basis, b-spline basis, and functional principal component (FPC) basis respectively.
+For the detailed form for Fourier, b-splines, and FPC basis,
+see
+\code{\link{fourier_basis_expansion}},
+\code{\link{bspline_basis_expansion}}, and
+\code{\link{FPC_basis_expansion}}.}
 
 \item{basis.order}{Indicate number of the function basis.
 When using Fourier basis \eqn{\frac{1}{2},\sin k t, \cos k t, k = 1,\dots,K},
-basis.order is the number \eqn{K}.
+\code{basis.order} is the number \eqn{K}.
 When using b-splines basis \eqn{\{B_{i,p}(x)\}_{i=-p}^{k}},
-basis.order is the number of splines, equal to \eqn{k+p+1}.
+\code{basis.order} is the number of splines, equal to \eqn{k+p+1}.
+When using FPC basis, \code{basis.order} is the number of functional principal components.
 (same as arguement \code{df} in \code{\link[splines]{bs}}.)
 May set a individual number for each functional covariate.
 When the element of this argument is less than the number of functional covariates,

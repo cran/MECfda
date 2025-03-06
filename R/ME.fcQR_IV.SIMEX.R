@@ -17,7 +17,7 @@
 #' @param data.W A dataframe or matrix, represents \eqn{W}, the measurement of \eqn{X}.
 #' Each row represents a subject. Each column represent a measurement (time) point.
 #' @param data.Z Scalar covariate(s),
-#' can be not input or NULL (when there's no scalar covariate),
+#' can be not input or \code{NULL} (when there's no scalar covariate),
 #' an atomic vector (when only one scalar covariate), a matrix or data frame,
 #' recommended form is a data frame with column name(s).
 #' @param data.M A dataframe or matrix, represents \eqn{M},
@@ -26,7 +26,7 @@
 #' @param tau Quantile \eqn{\tau\in(0,1)}, default is 0.5.
 #' @param t_interval A 2-element vector, represents an interval,
 #' means the domain of the functional covariate. Default is c(0,1), represent interval \eqn{[0,1]}.
-#' @param t_points Sequence of the measurement (time) points, default is NULL.
+#' @param t_points Sequence of the measurement (time) points, default is \code{NULL}.
 #' @param formula.Z A formula without the response variable,
 #' contains only scalar covariate(s), no random effects. If not assigned,
 #' include all scalar covariates and intercept term.
@@ -72,8 +72,6 @@
 #'                        tau = 0.5,
 #'                        basis.type = 'Bspline')
 #' }
-#' @importFrom stringr str_replace
-#' @importFrom stringr str_detect
 #' @importFrom corpcor make.positive.definite
 #' @importFrom MASS mvrnorm
 #' @importFrom quantreg rq
@@ -136,7 +134,8 @@ ME.fcQR_IV.SIMEX = function(data.Y, data.W, data.Z, data.M, tau = 0.5,
   }else{
     scalar.covariate = all.vars(formula.Z)
     fmla = format(formula.Z)
-    fmla = str_replace(fmla,'~','')
+    # fmla = stringr::str_replace(fmla,'~','')
+    fmla = sub('~','',fmla)
     fmla = as.formula(paste0(colnames(data.Y),' ~ ',
                              paste0(colnames(W_i),collapse = ' + '), ' + ',
                              fmla
@@ -165,12 +164,16 @@ ME.fcQR_IV.SIMEX = function(data.Y, data.W, data.Z, data.M, tau = 0.5,
 
   switch (basis.type,
           'Fourier' = {
-            col.X = str_detect(names(res.coef),'W_be') & (
-              str_detect(names(res.coef),'sin') | str_detect(names(res.coef),'cos') | str_detect(names(res.coef),'a_0'))
+            # col.X = stringr::str_detect(names(res.coef),'W_be') & (
+            #   stringr::str_detect(names(res.coef),'sin') | stringr::str_detect(names(res.coef),'cos') | stringr::str_detect(names(res.coef),'a_0'))
+            col.X = grepl('W_be',names(res.coef), fixed = TRUE) & (
+              grepl('sin',names(res.coef), fixed = TRUE) | grepl('cos',names(res.coef), fixed = TRUE) | grepl('a_0',names(res.coef), fixed = TRUE))
             coef.X = Fourier_series(
               double_constant = res.coef[paste('W_be','a_0',sep = '.')],
-              sin = res.coef[str_detect(names(res.coef),'W_be') & str_detect(names(res.coef),'sin')],
-              cos = res.coef[str_detect(names(res.coef),'W_be') & str_detect(names(res.coef),'cos')],
+              # sin = res.coef[stringr::str_detect(names(res.coef),'W_be') & stringr::str_detect(names(res.coef),'sin')],
+              # cos = res.coef[stringr::str_detect(names(res.coef),'W_be') & stringr::str_detect(names(res.coef),'cos')],
+              sin = res.coef[grepl('W_be',names(res.coef), fixed = TRUE) & grepl('sin',names(res.coef), fixed = TRUE)],
+              cos = res.coef[grepl('W_be',names(res.coef), fixed = TRUE) & grepl('cos',names(res.coef), fixed = TRUE)],
               k_sin = 1:basis.order,
               k_cos = 1:basis.order,
               t_0 = t_interval[1],
@@ -178,8 +181,10 @@ ME.fcQR_IV.SIMEX = function(data.Y, data.W, data.Z, data.M, tau = 0.5,
             )
           },
           'Bspline' = {
-            col.X = str_detect(names(res.coef),'W_be') & str_detect(names(res.coef),'bs')
-            coef.X = bspline_series(coef = c(res.coef[str_detect(names(res.coef),'W_be') & str_detect(names(res.coef),'bs')]),
+            # col.X = stringr::str_detect(names(res.coef),'W_be') & stringr::str_detect(names(res.coef),'bs')
+            col.X = grepl('W_be',names(res.coef), fixed = TRUE) & grepl('bs',names(res.coef), fixed = TRUE)
+            # coef.X = bspline_series(coef = c(res.coef[stringr::str_detect(names(res.coef),'W_be') & stringr::str_detect(names(res.coef),'bs')]),
+            coef.X = bspline_series(coef = c(res.coef[grepl('W_be',names(res.coef), fixed = TRUE) & grepl('bs',names(res.coef), fixed = TRUE)]),
                                     bspline_basis = bspline_basis(
                                       Boundary.knots = c(t_interval[1],t_interval[2]),
                                       df             = basis.order,

@@ -4,6 +4,7 @@
 \alias{basis2fun}
 \alias{basis2fun,bspline_series,numeric-method}
 \alias{basis2fun,Fourier_series,numeric-method}
+\alias{basis2fun,numericBasis_series,numeric-method}
 \title{From the summation series of a functional basis to function value}
 \usage{
 basis2fun(object, x)
@@ -11,6 +12,8 @@ basis2fun(object, x)
 \S4method{basis2fun}{bspline_series,numeric}(object, x)
 
 \S4method{basis2fun}{Fourier_series,numeric}(object, x)
+
+\S4method{basis2fun}{numericBasis_series,numeric}(object, x)
 }
 \arguments{
 \item{object}{An object that represents a functional basis.}
@@ -25,8 +28,9 @@ See \code{\link{bsplineSeries2fun}} and \code{\link{FourierSeries2fun}}.
 Generic function to compute function value from summation series of a functional basis.
 }
 \details{
-When applied to \code{\link{bspline_series}} object, equivalent to \code{\link{bsplineSeries2fun}}.\cr
-When applied to \code{\link{Fourier_series}} object, equivalent to \code{\link{FourierSeries2fun}}.
+When applied to \code{\link{bspline_series}}      object, equivalent to \code{\link{bsplineSeries2fun}}.\cr
+When applied to \code{\link{Fourier_series}}      object, equivalent to \code{\link{FourierSeries2fun}}.\cr
+When applied to \code{\link{numericBasis_series}} object, equivalent to \code{\link{numericBasisSeries2fun}}.
 }
 \author{
 Heyang Ji

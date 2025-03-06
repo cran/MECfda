@@ -1,17 +1,17 @@
 Package: MECfda
 Type: Package
 Title: Scalar-on-Function Regression with Measurement Error Correction
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
-    person(given = "Heyang",   family = "Ji", email = "jihx1015@outlook.com", role = c("aut","cre","ctb","dtc"), comment = c(ORCID = "0009-0001-7494-7227")),
-    person(given = "Ufuk",     family = "Beyaztas", email = "ufuk.beyaztas@marmara.edu.tr", role = c("ctb","rev"), comment = c(ORCID = "0000-0002-5208-4950")),
-    person(given = "Nicolas",  family = "Escobar-Velasquez", email = "nescoba@iu.edu", role = c("com"), comment = c(ORCID = "0009-0006-0800-5692")),
-    person(given = "Yuanyuan", family = "Luan", role = c("ctb")),
-    person(given = "Xiwei",    family = "Chen", role = c("ctb")),
-    person(given = "Mengli",   family = "Zhang",role = c("ctb"), email = "zhangmengli_sufe@163.com"),
-    person(given = "Roger",    family = "Zoh",  role = c("ths")),
-    person(given = "Lan",      family = "Xue",  role = c("ths")),
-    person(given = "Carmen",   family = "Tekwe", email = "ctekwe@gmail.com", role = c("ths"), comment = c(ORCID = "0000-0002-1857-2416"))
+    person(given = "Heyang",   family = "Ji",                role = c("aut","cre","ctb","dtc"), email = "jihx1015@outlook.com", comment = c(ORCID = "0009-0001-7494-7227")),
+    person(given = "Ufuk",     family = "Beyaztas",          role = c("aut","ctb","rev"), email = "ufuk.beyaztas@marmara.edu.tr", comment = c(ORCID = "0000-0002-5208-4950")),
+    person(given = "Nicolas",  family = "Escobar-Velasquez", role = c("com"), email = "nescoba@iu.edu", comment = c(ORCID = "0009-0006-0800-5692")),
+    person(given = "Yuanyuan", family = "Luan",              role = c("aut","ctb")),
+    person(given = "Xiwei",    family = "Chen",              role = c("aut","ctb")),
+    person(given = "Mengli",   family = "Zhang",             role = c("aut","ctb"), email = "zhangmengli_sufe@163.com"),
+    person(given = "Roger",    family = "Zoh",               role = c("aut","ths")),
+    person(given = "Lan",      family = "Xue",               role = c("aut","ths")),
+    person(given = "Carmen",   family = "Tekwe",             role = c("aut","ths"), email = "ctekwe@gmail.com", comment = c(ORCID = "0000-0002-1857-2416"))
   )
 Maintainer: Heyang Ji <jihx1015@outlook.com>
 Description: Solve scalar-on-function linear models,
@@ -27,22 +27,23 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
 Depends: R (>= 2.10),
-Imports: stats, stringr, lme4, quantreg, splines, dplyr, MASS, Matrix,
-        gss, corpcor, fda, magrittr, methods, nlme, glme, mgcv
+Imports: stats, lme4, quantreg, splines, dplyr, MASS, Matrix, gss,
+        corpcor, fda, magrittr, methods, nlme, glme, mgcv, refund,
+        pracma
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2024-10-18 15:59:03 UTC; lenovo
+Packaged: 2025-03-06 21:41:00 UTC; jihx1
 Author: Heyang Ji [aut, cre, ctb, dtc]
     (<https://orcid.org/0009-0001-7494-7227>),
-  Ufuk Beyaztas [ctb, rev] (<https://orcid.org/0000-0002-5208-4950>),
+  Ufuk Beyaztas [aut, ctb, rev] (<https://orcid.org/0000-0002-5208-4950>),
   Nicolas Escobar-Velasquez [com]
     (<https://orcid.org/0009-0006-0800-5692>),
-  Yuanyuan Luan [ctb],
-  Xiwei Chen [ctb],
-  Mengli Zhang [ctb],
-  Roger Zoh [ths],
-  Lan Xue [ths],
-  Carmen Tekwe [ths] (<https://orcid.org/0000-0002-1857-2416>)
+  Yuanyuan Luan [aut, ctb],
+  Xiwei Chen [aut, ctb],
+  Mengli Zhang [aut, ctb],
+  Roger Zoh [aut, ths],
+  Lan Xue [aut, ths],
+  Carmen Tekwe [aut, ths] (<https://orcid.org/0000-0002-1857-2416>)
 Repository: CRAN
-Date/Publication: 2024-10-21 12:01:07 UTC
+Date/Publication: 2025-03-06 22:00:02 UTC

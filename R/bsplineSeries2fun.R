@@ -1,5 +1,5 @@
-#' @title Compute the value of the Fourier summation series at certain points.
-#'
+#' @title Compute the value of the b-splines summation series at certain points.
+#' @description Compute the function \eqn{f(x) = \sum_{i=0}^{k}b_i B_{i,p}(x)}
 #' @param object an object of \code{\link{bspline_series}} class.
 #' @param x Value of $x$.
 #'

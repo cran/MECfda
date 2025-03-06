@@ -32,7 +32,7 @@ Each row represents a subject.
 Each column represent a measurement (time) point.
 Each layer represents an observation.}
 
-\item{data.Z}{Scalar covariate(s), can be not input or NULL (when there's no scalar covariate),
+\item{data.Z}{Scalar covariate(s), can be not input or \code{NULL} (when there's no scalar covariate),
 an atomic vector (when only one scalar covariate), a matrix or data frame,
 recommended form is a data frame with column name(s).}
 
@@ -42,7 +42,7 @@ Available options: 'UP_MEM', 'MP_MEM', 'average'.}
 \item{t_interval}{A 2-element vector, represents an interval,
 means the domain of the functional covariate. Default is c(0,1), represent interval \eqn{[0,1]}.}
 
-\item{t_points}{Sequence of the measurement (time) points, default is NULL.}
+\item{t_points}{Sequence of the measurement (time) points, default is \code{NULL}.}
 
 \item{d}{The number of time points involved for MP_MEM (default and miniumn is 3).}
 
@@ -74,9 +74,9 @@ When the element of this argument is less than the number of functional covariat
 \item{bs_degree}{Degree of the piecewise polynomials if use b-splines basis, default is 3.
 See \code{degree} in \code{\link[splines]{bs}}.}
 
-\item{smooth}{Whether to smooth the substitution of \eqn{X}. Default is FALSE.}
+\item{smooth}{Whether to smooth the substitution of \eqn{X}. Default is \code{FALSE}.}
 
-\item{silent}{Whether not to show the state of the running of the function. Default is TRUE.}
+\item{silent}{Whether not to show the state of the running of the function. Default is \code{TRUE}.}
 }
 \value{
 Returns a \code{fcRegression} object. See \code{\link{fcRegression}}.

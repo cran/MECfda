@@ -32,7 +32,7 @@ equally spaced sequence is chosen by the function automatically with equal space
 See \code{knots} in \code{\link[splines]{bs}}.}
 
 \item{\code{intercept}}{Whether an intercept is included in the basis,
-default value is TRUE, and must be TRUE. See \code{intercept} \code{\link[splines]{bs}}.}
+default value is \code{TRUE}, and must be \code{TRUE}. See \code{intercept} \code{\link[splines]{bs}}.}
 
 \item{\code{df}}{degree of freedom of the basis, which is the number of the splines, equal to \eqn{p+k+1}.
 By default \eqn{k = 0}, and \code{df} \eqn{= p+1}. See \code{df} \code{\link[splines]{bs}}.}

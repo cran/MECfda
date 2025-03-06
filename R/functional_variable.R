@@ -3,7 +3,7 @@
 #' A s4 class that represents data of a function-valued variable.
 #' The format is
 #'   \eqn{f_i(t),\ t\in\Omega=[t_0,t_0 + T]}
-#'   where $i$ is the observation (subject) index, $t$ represents the measurement (time) points.
+#'   where \eqn{i} is the observation (subject) index, \eqn{t} represents the measurement (time) points.
 #'
 #' @slot X a matrix \eqn{(x_{ij})_{n\times m}}, where \eqn{x_{ij} = f_i(t_j)}, represents the value of \eqn{f_i(t_j)}, each row represent an observation (subject), each column is corresponding to a measurement (time) point.
 #' @slot t_0  start of the domain (time period), \eqn{t_0}. Default is 0.

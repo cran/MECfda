@@ -69,7 +69,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -128,13 +128,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -419,25 +426,56 @@ in various scalar-on-function regression settings.
 <!-- output: html_document --> <!-- output: latex_fragment --></p>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>Functional data analysis is commonly used to analyze high-dimensional
-data that appear as functions or images <span class="citation">[1]</span> <span class="citation">[2]</span> <span class="citation">[3]</span>. Functional data analysis can be used to
-analyzed data collected continuously or frequently over a given time
-period that appear as complex high dimensional functions of time. When
-assessing how both functional and scalar-valued covariates influence
-scalar-valued outcomes, scalar-on-function regression models may be
-used. Self-reported measures, such as dietary intake, are well known to
-be prone to measurement error<span class="citation">[4]</span>, and
-recent studies have indicated that even the relatively more objective
-data obtained from wearable devices is prone to measurement error <span class="citation">[5]</span> <span class="citation">[6]</span>. It has
-been demonstrated that similar to scalar-valued covariates prone to
-measurement error, the failure to correct for biases due to measurement
-error associated with functional data also leads to biased estimates</p>
-<p>We develop an <a href="https://www.R-project.org/">R</a>
-<!-- [\textsf{R}](https://www.R-project.org/)  --> package
-<strong>MECfda</strong> for solving scalar-on-function regression models
-including multi-level generalized scalar-on-function regression models
-and functional quantile linear regression models measurement error
-corrections using various bias reduction techniques in these models.</p>
+<p>Functional data analysis (FDA) is an essential statistical approach
+for handling high-dimensional data that appear in the form of functions
+or images <span class="citation">[1–3]</span>. In many applications,
+data are collected continuously or at frequent time intervals, resulting
+in complex functions over time. When the objective is to study the
+relationship between a scalar response and both functional and scalar
+covariates, scalar-on-function regression models become a natural
+choice.</p>
+<p>Although self-reported measures (e.g., dietary intake) are known to
+suffer from measurement error <span class="citation">[4]</span>, recent
+studies have demonstrated that even device-based measurements (such as
+those from wearable devices) can be error prone <span class="citation">[5, 6]</span>. Failing to correct for measurement error
+in either scalar or function-valued covariates may lead to biased
+parameter estimates.</p>
+<p>The goal of the <strong>MECfda</strong> package is to provide
+solutions for a range of scalar-on-function regression models—including
+multi-level generalized scalar-on-function regression models and
+functional quantile regression models—while incorporating several
+bias-correction methods for measurement error in scalar-on-function
+regression problem.</p>
+<p>This package is developed in <a href="https://www.R-project.org/">R</a>.</p>
+<!-- 
+Functional data analysis is commonly use
+to analyze high-dimensional data that appear as functions or images 
+[@wang2016functional] [@ramsay2002applied] [@ramsay1991some].
+Functional data analysis can be used to analyzed data collected 
+continuously or frequently over a given time period that appear as 
+complex high dimensional functions of time. 
+When assessing how both functional and scalar-valued covariates 
+influence scalar-valued outcomes, 
+scalar-on-function regression models may be used. 
+Self-reported measures, such as dietary intake,
+are well known to be prone to measurement error[@carroll2006measurement],
+and recent studies have indicated that even the relatively more objective data 
+obtained from wearable devices is prone to measurement error
+[@crainiceanu2009generalized] [@tekwe2019instrumental]. 
+It has been demonstrated that similar to scalar-valued covariates prone 
+to measurement error, the failure to correct for biases due to measurement error 
+associated with functional data also leads to biased estimates
+
+We develop an 
+[R](https://www.R-project.org/)
+package **MECfda**
+for solving scalar-on-function regression models including
+multi-level generalized scalar-on-function regression models 
+and functional quantile linear regression models
+measurement error corrections using various bias reduction techniques 
+in these models.
+
+-->
 <!-- 
 Functional data analysis is a commonly used
 technique when the data are very high dimensional. 
@@ -460,56 +498,78 @@ due to measurement error in scalar-on-function linear regression models.
 <div id="scalar-on-function-linear-regression-models" class="section level1">
 <h1>Scalar-on-Function Linear Regression Models</h1>
 <!-- The generic form  -->
-<p>The general form of scalar-on-function linear regression model is
-<span class="math display">\[T(F_{Y_i|X_i,Z_i}) =  \sum_{l=1}^{L}
-\int_{\Omega_l} \beta_l(t) X_{li}(t) dt + (1,Z_i^T)\gamma\]</span> where
-<span class="math inline">\(Y_i\)</span> represents the scalar-valued
-response variable, <span class="math inline">\(X_{li}(t)\)</span>
-represents the <span class="math inline">\(l\)</span>-th function-valued
-covariate (<span class="math inline">\(l=1,\dots,L\)</span>), <span class="math inline">\(\Omega_l\)</span> is the domain of the <span class="math inline">\(l\)</span>-th function-valued covariate, <span class="math inline">\(\beta_l\)</span> is a function-valued parameter,
-<span class="math inline">\(\beta_l\)</span> and <span class="math inline">\(X_{li}\)</span> (<span class="math inline">\(t\in\Omega_l\)</span>) are in <span class="math inline">\(L^2(\Omega_l)\)</span>, <span class="math inline">\(Z_i = (Z_{1i},\dots,Z_{qi})^T\)</span> represents
-the scalar valued covariates, <span class="math inline">\(\gamma =
-(\gamma_0,\gamma_1,\dots,\gamma_q)^T\)</span> represents scalar-valued
-parameter, <span class="math inline">\(F_{Y_i|X_i,Z_i}\)</span>
-represents the cumulative distribution function of <span class="math inline">\(Y_i\)</span> given <span class="math inline">\(X_i\)</span> and <span class="math inline">\(Z_i\)</span>, and <span class="math inline">\(T(\cdot)\)</span> is a statistical functional. A
-statistical functional is defined as a mapping from probability
-distribution to real numbers. Statistical functionals represent
-quantiﬁable properties of probability distributions, such as expectation
-and variance. The following gives forms of the statistical functionals
-in the two types of scalar-on-function linear regression models that can
-be solved using the algorithms included in <strong>MECfda</strong>
-package.</p>
-<p>In multi-level generalized scalar-on-function generalized linear
-regression models, <span class="math display">\[T(F_{Y_i|X_i,Z_i}) =
-g\left\{\int_\mathbb{R}ydF_{Y_i|X_i,Z_i}(y)\right\} =
-g(E[Y_i|X_i,Z_i]),\]</span> where <span class="math inline">\(g(\cdot)\)</span> is a link function as in
-generalized linear model. The only restriction of <span class="math inline">\(g(\cdot)\)</span> is that it should be strictly
-monotonic.</p>
-<p>In scalar-on-function quantile linear regression models, <span class="math display">\[T(F_{Y_i|X_i,Z_i}) = Q_{Y_i|X_i,Z_i}(\tau) =
-F_{Y_i|X_i,Z_i}^{-1}(\tau),\]</span> where <span class="math inline">\(F_{Y_i|X_i,Z_i}^{-1}(\cdot)\)</span> is the
-inverse of <span class="math inline">\(F_{Y_i|X_i,Z_i}(\cdot)\)</span>,
-<span class="math inline">\(\tau\in(0,1)\)</span>.</p>
+<p>The general form of the scalar-on-function regression model is given
+by <span class="math display">\[T(F_{Y_i|X_i,Z_i}) =  \sum_{l=1}^{L}
+\int_{\Omega_l} \beta_l(t) X_{li}(t) dt + (1,Z_i^T)\gamma\]</span>
+where</p>
+<ul>
+<li><span class="math inline">\(Y_i\)</span> is the scalar response
+variable;</li>
+<li><span class="math inline">\(X_{li}(t)\)</span> denotes the <span class="math inline">\(l\)</span>th function-valued covariate defined on
+the domain <span class="math inline">\(\Omega_l\)</span>;</li>
+<li><span class="math inline">\(\beta_l(t)\)</span> is the corresponding
+function-valued regression coefficient, and both <span class="math inline">\(\beta_l\)</span> and <span class="math inline">\(X_{li}\)</span> belong to <span class="math inline">\(L^2(\Omega_l)\)</span>;</li>
+<li><span class="math inline">\(Z_i = (Z_{1i}, \dots, Z_{qi})^T\)</span>
+represents the scalar covariates;</li>
+<li><span class="math inline">\(\gamma = (\gamma_0, \gamma_1, \dots,
+\gamma_q)^T\)</span> is the parameter vector for the scalar
+covariates;</li>
+<li><span class="math inline">\(F_{Y_i\mid X_i,Z_i}\)</span> is the
+cumulative distribution function of <span class="math inline">\(Y_i\)</span> conditional on <span class="math inline">\(X_i\)</span> and <span class="math inline">\(Z_i\)</span>;</li>
+<li><span class="math inline">\(T(\cdot)\)</span> is a statistical
+functional.</li>
+</ul>
+<p>A statistical functional is defined as a mapping from a probability
+distribution to a real number. Statistical functionals represent
+quantiﬁable properties of probability distributions, (e.g., an
+expectation, a variance or a quantile).</p>
+<p>Two common model types supported in this package are:</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Multi-level Generalized Scalar-on-Function
+Regression:</strong><br />
+This model is formulated as <span class="math display">\[
+T\bigl(F_{Y_i\mid X_i,Z_i}\bigr) = g\Bigl\{E(Y_i\mid X_i,Z_i)\Bigr\} =
+g\left\{\int_\mathbb{R}ydF_{Y_i|X_i,Z_i}(y)\right\},
+\]</span> where <span class="math inline">\(g(\cdot)\)</span> is a
+strictly monotonic link function analogous to that used in generalized
+linear models.</p></li>
+<li><p><strong>Scalar-on-Function Quantile Regression:</strong><br />
+This model is expressed as <span class="math display">\[
+T\bigl(F_{Y_i\mid X_i,Z_i}\bigr) = Q_{Y_i\mid X_i,Z_i}(\tau) =
+F_{Y_i\mid X_i,Z_i}^{-1}(\tau),
+\]</span> where <span class="math inline">\(\tau \in (0,1)\)</span>
+denotes the quantile of interest.</p></li>
+</ol>
+<div id="representation-of-functional-data" class="section level2">
+<h2>Representation of Functional Data</h2>
+<p>Function-valued variables (functional variables) are typically
+recorded as measurements at specific time points, resulting in an <span class="math inline">\(n \times m\)</span> data matrix <span class="math inline">\((x_{ij})\)</span>, where each row corresponds to
+an observation (subject) and each column to a measurement time.</p>
+</div>
 <div id="functional-data" class="section level2">
 <h2>Functional Data</h2>
-<p>Function-valued variables (functional variables) are usually recorded
-as the value of the functions at certain (time) points in its domain.
-The data of a function-valued variable are often presented in the form
-of a matrix, <span class="math inline">\((x_{ij})_{n\times m}\)</span>,
-where <span class="math inline">\(x_{ij} = f_i(t_j)\)</span>, represents
-the value of <span class="math inline">\(f_i(t_j)\)</span>, each row
-represents an observation (subject), and each column corresponds to a
-measurement (time) point.</p>
-<div id="s4-class-functional_variable" class="section level4">
-<h4>S4 class <code>functional_variable</code></h4>
-<p>In the <strong>MECfda</strong> package, we have an s4 class,
-<code>functional_variable</code>, that represents the data of a
-function-valued variable in a matrix form. The class has four slots. The
-slot <code>X</code>, represents matrix <span class="math inline">\((x_{ij})_{n\times m}\)</span>. The slots
-<code>t_0</code> and <code>period</code> represent the left end and
-length of the domain of the function-valued variable, respectively. The
-slot <code>t_points</code> represents the (time) points that the
-functional variable is measured. A method, <code>dim</code>, is provided
-to return the number of subjects and measurement (time) points for a
+<p>Function-valued variables (functional variables) are typically
+recorded as the measurements of the values of the functions at specific
+(time) points in the domain. The data of a function-valued variable are
+often presented in the form of a matrix, <span class="math inline">\((x_{ij})_{n\times m}\)</span>, where <span class="math inline">\(x_{ij} = f_i(t_j)\)</span>, represents the value
+of <span class="math inline">\(f_i(t_j)\)</span>, each row corresponds
+to an observation (subject) and each column to a measurement time.</p>
+<div id="s4-class-functional_variable" class="section level3">
+<h3>S4 Class <code>functional_variable</code></h3>
+<p>In the <strong>MECfda</strong> package, the s4 class
+<code>functional_variable</code> represents function-valued data stored
+in matrix form. The main slots include:</p>
+<ul>
+<li><strong><code>X</code></strong>: The data matrix <span class="math inline">\((x_{ij})\)</span>;<!-- $(x_{ij})_{n\times m}$ --></li>
+<li><strong><code>t_0</code></strong> and
+<strong><code>period</code></strong>: The left endpoint and length of
+the function’s domain, respectively (The class only support the domain
+in the format of interval);</li>
+<li><strong><code>t_points</code></strong>: A vector of the time points
+at which the measurements are recorded.</li>
+</ul>
+<p>A dedicated method, <code>dim</code>, returns the number of subjects
+and the number of measurement points for a
 <code>functional_variable</code> object.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>fv <span class="ot">=</span> <span class="fu">functional_variable</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">X =</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">10</span><span class="sc">*</span><span class="dv">24</span>),<span class="dv">10</span>,<span class="dv">24</span>),</span>
@@ -524,69 +584,75 @@ to return the number of subjects and measurement (time) points for a
 </div>
 <div id="basis-expansion" class="section level2">
 <h2>Basis Expansion</h2>
-<p><span class="math inline">\(\{\rho_{k}\}_{k=1}^\infty\)</span> is a
-basis of <span class="math inline">\(L^2(\Omega)\)</span>. For an
-arbitrary function-valued parameter <span class="math inline">\(\beta(\cdot)\in L^2(\Omega)\)</span>, there exists
-a number sequence <span class="math inline">\(\{c_{k}\}_{k=1}^\infty\)</span> such that <span class="math display">\[\beta(t) = \sum_{k=1}^\infty
-c_{k}\rho_{k}(t)\]</span> and for a function-valued variable, <span class="math inline">\(X_i(t)\)</span>, <span class="math display">\[\int_\Omega\beta(t) X_i(t) dt
-= \int_\Omega X_i(t) \sum_{k=1}^\infty c_{k}\rho_{k}(t) dt
-= \sum_{k=1}^\infty c_{k} \int_\Omega \rho_{k}(t) X_i(t) dt
-\]</span> We perform a truncation for the infinite basis sequence, then
-<span class="math display">\[\int_\Omega\beta(t) X_i(t) dt \approx
-\sum_{k=1}^p c_{k} \int_\Omega X_i(t) \rho_{k}(t) dt\]</span> where
-<span class="math inline">\(p&lt;\infty\)</span>. For statistical models
-with parts in the form of <span class="math inline">\(\int_\Omega\beta(t) X_i(t) dt\)</span>, we use
-<span class="math inline">\(c_{k} \int_\Omega X_i(t) \rho_{k}(t)
-dt\)</span> to approximate <span class="math inline">\(\int_\Omega\beta(t) X_i(t) dt\)</span> and treat
-<span class="math inline">\(\int_{\Omega} \rho_{k}(t) X_{i}(t)
-dt\)</span> as the variable. In practice, we usually choose the number
-of basis, <span class="math inline">\(p\)</span> based on the sample
-size, <span class="math inline">\(n\)</span>, and the <span class="math inline">\(p\)</span> is in a form of <span class="math inline">\(p(n)\)</span>. The scalar-on-function linear model
-is converted to an ordinary scalar-on-scalar linear model, and the
-problem of estimating <span class="math inline">\(\beta(t)\)</span> is
-converted to estimating <span class="math inline">\(c_k\)</span>, <span class="math inline">\(k=1,\dots p\)</span>.</p>
+<p>Let <span class="math inline">\(\{\rho_{k}\}_{k=1}^\infty\)</span> be
+a complete basis for <span class="math inline">\(L^2(\Omega)\)</span>.
+For an arbitrary function <span class="math inline">\(\beta(t) \in
+L^2(\Omega)\)</span>, there exists a sequence of (real) number <span class="math inline">\(\{c_k\}\)</span> such that <span class="math display">\[
+\beta(t) = \sum_{k=1}^\infty c_k \, \rho_k(t).
+\]</span></p>
+<p>For the function-valued variable <span class="math inline">\(X_i(t)\)</span>, we have <span class="math display">\[
+\int_\Omega \beta(t) X_i(t) \, dt = \int_\Omega X_i(t) \sum_{k=1}^\infty
+c_{k}\rho_{k}(t) dt = \sum_{k=1}^\infty c_k \int_\Omega \rho_k(t) X_i(t)
+\, dt.
+\]</span></p>
+<p>In practice, for <span class="math inline">\(\int_\Omega\beta(t)
+X_i(t) dt\)</span> in statistical models, we truncate the infinite
+series to <span class="math inline">\(p\)</span> terms (<span class="math inline">\(p&lt;\infty\)</span>), using <span class="math inline">\(c_{k} \int_\Omega X_i(t) \rho_{k}(t) dt\)</span>
+to approximate <span class="math inline">\(\int_\Omega\beta(t) X_i(t)
+dt\)</span> so that the problem reduces to estimating a finite number of
+parameters <span class="math inline">\(c_1, \dots, c_p\)</span>, and
+treating <span class="math inline">\(\int_\Omega \rho_k(t) X_i(t) \,
+dt\)</span> as new covariates. The number of basis, <span class="math inline">\(p\)</span>, can be related to the sample size,
+<span class="math inline">\(n\)</span>, and the <span class="math inline">\(p\)</span> is in a form of <span class="math inline">\(p(n)\)</span>.</p>
 <p>In practice, we may not necessarily use the truncated complete basis
 of <span class="math inline">\(L^2\)</span> function space. Instead, we
 can just use a finite sequence of linearly independent functions as the
-basis function.</p>
-<p>Performing basis expansion methods on function-valued variable data
-in matrix form as we mentioned is to compute <span class="math inline">\((b_{ik})_{n\times p}\)</span>, where <span class="math inline">\(b_{ik} = \int_\Omega f(t)\rho_k(t)
+basis function. Common choices for the basis include the Fourier basis,
+b-spline basis, and eigenfunction basis.</p>
+<p>In numerical computing level, performing basis expansion methods on
+function-valued variable data in matrix form as we mentioned is to
+compute <span class="math inline">\((b_{ik})_{n\times p}\)</span>, where
+<span class="math inline">\(b_{ik} = \int_\Omega f(t)\rho_k(t)
 dt\)</span>.</p>
-<p>Usually the domain <span class="math inline">\(\Omega\)</span> of a
-function-valued variable <span class="math inline">\(\{X(t),t\in\Omega\}\)</span> is an interval. The
-commonly used basis sequence types includes the Fourier basis, b-splines
-basis, and eigen function basis.</p>
+<!-- Usually the domain $\Omega$ of a function-valued variable $\{X(t),t\in\Omega\}$ is an interval.  -->
 <div id="fourier-basis" class="section level3">
-<h3>Fourier basis</h3>
-<p>The Fourier basis of <span class="math inline">\(L^2([t_0,t_0+T])\)</span> consists of <span class="math display">\[\frac{1}{2},\ \cos(\frac{2\pi}{T}k[x-t_0]),\ \sin
-(\frac{2\pi}{T}k[x-t_0])\]</span> where <span class="math inline">\(k =
-1,\dots,\infty\)</span>.</p>
+<h3>Fourier Basis</h3>
+<p>On the interval <span class="math inline">\([t_0, t_0+T]\)</span>,
+the Fourier basis consists of</p>
+<p><span class="math display">\[
+\frac{1}{2}, \quad \cos\left(\frac{2\pi}{T}k(x-t_0)\right), \quad
+\sin\left(\frac{2\pi}{T}k(x-t_0)\right), \quad k = 1, 2, \dots
+\]</span></p>
 <div id="s4-class-fourier_series" class="section level4">
-<h4>S4 class <code>Fourier_series</code></h4>
-<p>In the <strong>MECfda</strong> package, we have an s4 class,
-<code>Fourier_series</code> that represents the linear combination of
-Fourier basis functions <span class="math display">\[\frac{a_0}{2} +
-\sum_{k=1}^{p_a} a_k \cos{(\frac{2\pi}{T}k(x-t_0))} +
-\sum_{k=1}^{p_b} b_k \sin{(\frac{2\pi}{T}k(x-t_0))},\qquad
-x\in[t_0,t_0+T].\]</span> The slot <code>double_constant</code> is the
-value of <span class="math inline">\(a_0\)</span>. The slot
-<code>cos</code> contains the coefficient value of <span class="math inline">\(\cos\)</span> waves, <span class="math inline">\(a_k\)</span>. The slot <code>sin</code> contains
-the coefficient value of <span class="math inline">\(\sin\)</span>
-waves, <span class="math inline">\(b_k\)</span>. The slot
-<code>k_cos</code> contains the values of <span class="math inline">\(k\)</span> that correspond to the coefficients of
-<span class="math inline">\(\cos\)</span> waves. The slot
-<code>k_sin</code> contains the values of <span class="math inline">\(k\)</span> that correspond to the coefficients of
-<span class="math inline">\(\sin\)</span> waves. The slot
-<code>t_0</code> is the left end of the domain interval <span class="math inline">\(t_0\)</span>. The slot <code>period</code> is
-length of the domain interval <span class="math inline">\(T\)</span>.</p>
-<p>The method <code>plot</code> for class <code>Fourier_series</code> is
-provided to generate a visual representation of the summation function.
-The method <code>FourierSeries2fun</code> is provided to compute the
-value of the summation function. The argument <code>object</code> should
-be an object of <code>Fourier_series</code> class. The argument
-<code>x</code> is the value of independent variable <span class="math inline">\(x\)</span>. The method <code>extractCoef</code> is
-provided to extract the Fourier coefficients of
-<code>Fourier_series</code> class object.</p>
+<h4>S4 Class <code>Fourier_series</code></h4>
+<p>In the <strong>MECfda</strong> package, s4 class
+<code>Fourier_series</code> represents a Fourier series of the form</p>
+<p><span class="math display">\[
+\frac{a_0}{2} + \sum_{k=1}^{p_a} a_k \cos\left(\frac{2\pi k
+(x-t_0)}{T}\right) + \sum_{k=1}^{p_b} b_k \sin\left(\frac{2\pi k
+(x-t_0)}{T}\right),\quad x \in [t_0, t_0+T].
+\]</span></p>
+<p>Its main slots include:</p>
+<ul>
+<li><strong><code>double_constant</code></strong>: The value of <span class="math inline">\(a_0\)</span>;</li>
+<li><strong><code>cos</code></strong> and
+<strong><code>sin</code></strong>: The coefficients <span class="math inline">\(a_k\)</span> and <span class="math inline">\(b_k\)</span> for the cosine and sine terms,
+respectively;</li>
+<li><strong><code>k_cos</code></strong> and
+<strong><code>k_sin</code></strong>: The frequency values corresponding
+to the cosine and sine coefficients;</li>
+<li><strong><code>t_0</code></strong> and
+<strong><code>period</code></strong>: The left endpoint, <span class="math inline">\(t_0\)</span>, and length, <span class="math inline">\(T\)</span>, of the domain (interval <span class="math inline">\([t_0, t_0+T]\)</span>), respectively.</li>
+</ul>
+<p>Additional methods such as <code>plot</code>,
+<code>FourierSeries2fun</code>, and <code>extractCoef</code> are
+provided for visualization, function evaluation, and coefficient
+extraction.</p>
+<!-- 
+The method `FourierSeries2fun` is provided to compute the value of the summation function.
+The argument `object`   should be an object of `Fourier_series` class.
+The argument `x` is the value of independent variable $x$. 
+-->
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fsc <span class="ot">=</span> <span class="fu">Fourier_series</span>(</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">double_constant =</span> <span class="dv">3</span>,</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">cos =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">2</span><span class="sc">/</span><span class="dv">3</span>),</span>
@@ -597,7 +663,7 @@ provided to extract the Fourier coefficients of
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">period =</span> <span class="dv">1</span></span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>)</span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="fu">plot</span>(fsc)</span></code></pre></div>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASAAAAEgCAMAAAAjXV6yAAAAq1BMVEUAAAAAADoAAGYAOjoAOmYAOpAAZrY6AAA6ADo6AGY6OgA6OmY6OpA6ZpA6ZrY6kLY6kNtmAABmADpmOgBmOjpmkLZmkNtmtrZmtttmtv+QOgCQZgCQZjqQkGaQtpCQttuQtv+Q2/+2ZgC2Zjq2kGa225C227a229u22/+2///bkDrbkGbbtmbbtpDb27bb29vb2//b/9vb////tmb/25D/27b//7b//9v///9s70hzAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAK10lEQVR4nO2diZbithKG3ZMZSCZbk+1eJmuTZTJku7dhaL//k0WLDXiR/ipJluWm/nMasF0lS1+XFmzJVLXIq2ruDJQuAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABZQC0rxq9eIdMn95Urx49h395XVV3n/4e5ByoJQFSR43utgHOoSoLUKaEOMoC6O7hsvXXV1X1wdf6P70zBT1tqntj88OX1Yu3NgieflZh8tljfd5vK9WuuvtvXb9XcaRDaGA0cK7/8NVIonIDaqJAl6QLyOz9vymj2qX18t15v6051qE+rrXH0MjhHBlvOavY1hROFULtuR8AevV7/Y9tRnY6ZCyGZv85obuv3zapDo36zirl1WP9pzlXuDIDaoLAvPUAmWqjy2j3qF3qcLPfqmmkX/742Lp1jPrOitLLt6M54igvoLajMbWu1wbpamiOq4I1vdVDr/2q/3zd1p8Ro76z5Wnbu3DlbYN01Ov3g6ZlAbW15FLGQ+UEpCz+/l4hWNUjRgPn91/aTz/F5D4voJEIGgJSe7Yjvo1lbSvoiNHAWfV437++tPFhytyLXbdBdv+h6gNqw6zvq/bffaPK+tdaeY8YDZyNnr6N68YyA7ruxcyrHtX0ANnxzvuNtRwOESpdxUaM+s4K/eePup4tKYKux0Hn9rQPqBnK6D0d3/arRtu494wGzj+fW6MIzTOS/sZ8PKpG9NPfBr2Yajq+U+zMCLjr+2R6saZfGhgNnG2n93HxI+llSwABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAkoMqFqM5gI0vpeTozwqCRD7n5ZD5QAKCesMKgZQWMWfXqUACm0aJ1epgIohVAig8N51apUBKGb8MbEKA1QX19kXAajLpCxCRQHqbgmg8+cekKIIhQA66TVEu6gVsF5Awx0zKgDQ4e5hrxekpVojPMRRUgjxAT29ua/3enVaqvV5IzQWDei02RpABwjo4Fmj5q9PBYVQeATtfAsYd1V1f/zk0dAE5x1lsWRATRu0rxxF19LwdiZ69g6MoMtaNCC72tO3wNPEzfFDbdGriNWAhwNFMYQmGQfZHu7pfzUjgvrHnzWgSw/nHAy0yTlBlEIopBdrsu7rxfa2Bh6cDdUzBtQI9/Kk5NwYCiEUXsV2qzEzZnIeCosHFBdCkwJKCTYcUJKvGj4KoYTGR1ahCgZ02iSoYt6ihJWzulZMDtv02IZtLxb3KEICIE8D7km3Skxo3gtm/mIElLLqK1FGUxoykgOl4BdywCeeUMmA2ISM7byAzsPoKvK5jJMBSk1ozgiCRWCWscMkFaGiAfEI9YjMB6itZtFVLC2gAZBIQm0kku3Pn3avHver+rj2XFGkJUfIP6OMQx5RgFrPkIHifX3QdzViH6pHyT+9jCPxEhNCZ88QQNv6+NE78+eUfsifiTDXN7bJAIV5u1PjA9J3NU5fPHgB6etl9suaDxDlWze1jOPREkwoBpAp8+7eV8U0Q/3qub1oqzfOOxdQmLcnuZBufrfSPZmnE2vvhunm3HdXI7jgZLNQQhe3ScZBNoJqjdIXQbTzUoo4XsGo3t6TTjNQbLG4A20aQM4DgReVWBltP5CulLX3XZ/exAKiEPJgmAGQvu8e+eBcznk5gMK83V6sjHYMzfPOU9zVoFjCInrrUQihKhpQ7ak8Ycn5TFERvQbzAMoZQeSrRg6DAELXHiEj6bxtECxi3GHkMVEvRk+OYkuKkGIApVEIoMBGhk2oY78EQKT7rwIIAMLuYWdbBCAPBRxA7BB6noDCvH3m3IxeDPU1132ae/Nka1cZKQHErWPRgHb6l4NWaSZQkc3Hy0jjE3b3iJvRq3HQ1sw9TDKBimw+XsZiAe30bzZl/S2l0TIS+fDqWM82pIqtThu92idnFRsnRI4MTgjFA9I/3/Xw9CbuC0cwoMq7CzgzzsPO6KzdvPHoF5LOh1PHsgAiTJIJB1T1d3CcyZb8jF4Z4iWZ7kvRnH+7y3d0k+bLNwwARFmSCZuoGEBVf4PhzLYLuWBGWZLpXqXBPO+1z5iYvkS7gIx2xkG0JZmk5FhOwXzC79CGR5B3SSY9OZ5XKB9qP5YCEGVJJic5nlsoH2IIJQGEl2TykuP5BfLhAbreQz4BJzcTJhfIh1bHRlJeHKDQ+Qihl9aWByj4jFkAqeEhac0qMbmsogPq7CInH5qvLMmRTgkJjVmEjYPi9YwBOR/HwdIMgHAdGzMIGSjGLQhnnjehUAiNHg+JoIU20rkApdEcgIImygggcHSaK4qs5PIpE6DUD3nLqCyAkj/kLaN8IeQ4tqgritHKAmjOK4rR8hBKBijqimJV+f6J08t9dteRpV1RjFQeQCk0EyA3IQHUnNfFwQmOnHLzflzf+x9Cyksut1xtYDJAZrm8vm2aYN38LJoakJmZqCeY5Z2jmE6O8bK78SYnbF7NFww7M2GJA0Vz5jEWCQFt28drPidAvvEjOV3zah9ja5qf6EdTzKURGukAmZbHPIc0cpJiUYBcXZs5Rk7WvqnvGXqOa9NQR+QyxjlOQxwePvxx0MEsQjiu41YizAloOE8zKaBEKgFQ1dseNyanmiJrkyXHPHkHiTeAbhNQPQrIYUpOM0nOpkqOe/YrKP4AulFAjOmgkwCaZKZ9UpH5TBRB+LkVMwOiz5edqIpNMdM+rYh8JmuDpphpn1Y0PrkbaUqWconE51Z7MSPSP2tKQL7JeiUAImk2QIvRTIBoiYLjcYdj3ePMtQQQkACKlgCKTFQAxR0XQAIo7rgAunlAz0kCCEgAAQkgIAEEJICABBCQAAISQEACCEgAAQkgIAEElBJQZ6kHf91H34O5tK/jfv6luGglBHRQ+Tu0eexs8N31Nu/R1h13PaMZTSMgKh0ge7OjWerR2eC7180i9eCzr5hndysdoGaivp1B1Nngu+tPr77lAOq4FwroQx3fzVKPzgbf3Wyy2qCue5FVzDYATTPQ2eC7mxrDAtQ7YfzSwFaFAmIvUO+66wUVZg1lvMqsYmYjvIrxW0C3ymyk980cFXor0nHnx69bxXbzzAjquFtaSR6pVfBAkTmS7rgX2QaZinFZk7dn9yMd95r9VaPjrn/RMgkf+bKKJICABBCQAAISQEACCEgAAQkgIAEEJICABBCQAAISQEACCEgAAQkgIAEEJICABBCQAAISQEACCEgAAQkgIAEEJICABBBQMYB25AkvaX4qjqpyAJmpCsd1kpmXCVUYoESznhKqNEDNc+Pt7JXj+j8b9eG4tlVvZ6ugrmKnjT6So6qVBsi86xm8p81KAVLxtNcPtdRz69qHgltA+kiOaCsOkEJhp9OpymYmiTUv29MXD3ZynQV0X8f+xAVNJQKyBVev5sPlxVS9FtA2U3dWHCD1bmmo4ncB7avqxa/rWwekG+nxCDpv3DYg3c1ftUFXgMys3sOtVzE7d/fSi/Ui6LRRvf+tArr+qnEeB/XaoLuHnf59i5sEVKoEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQQkgIAEEJAAAhJAQAIISAABCSAgAQT0L3Fy3zw8b8dRAAAAAElFTkSuQmCC" /><!-- --></p>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">FourierSeries2fun</span>(fsc,<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="fl">0.05</span>))</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt;  [1]  2.1666667  3.1712610  3.6252757  3.4344848  2.7346112  1.8333333</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;  [7]  1.0888125  0.7715265  0.9623175  1.5254623  2.1666667  2.5532270</span></span>
@@ -619,49 +685,60 @@ provided to extract the Fourier coefficients of
 x) + \frac75\sin(2\pi\cdot2x).\]</span></p>
 </div>
 </div>
-<div id="b-splines-basis" class="section level3">
-<h3>B-splines basis</h3>
+<div id="b-spline-basis" class="section level3">
+<h3>B-spline Basis</h3>
 <p>A b-spline basis <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span> on the interval
-<span class="math inline">\([t_0,t_{k+1}]\)</span> is defined as <span class="math display">\[B_{i,0}(x) = \left\{
-    \begin{aligned}
-        &amp;I_{(t_i,t_{i+1}]}(x), &amp; i = 0,1,\dots,k\\
-        &amp;0, &amp;i&lt;0\ or\ i&gt;k
-    \end{aligned}
-\right.\]</span> <span class="math display">\[B_{i,r}(x) = \frac{x -
-t_{i}}{t_{i+r}-t_{i}} B_{i,r-1}(x) + \frac{t_{i+r+1} - x}
-{t_{i+r+1} - t_{i+1}}B_{i+1,r-1}(x)\]</span> For all discontinuity
-points of <span class="math inline">\(B_{i,r}\)</span> (<span class="math inline">\(r&gt;0\)</span>) in the interval <span class="math inline">\((t_0,t_k)\)</span>, let the value equals its
-limit, which means <span class="math display">\[B_{i,r}(x) = \lim_{t\to
-x} B_{i,r}(t).\]</span> The slot <code>Boundary.knots</code> is the
-boundary of the spline domain (start and end), which is <span class="math inline">\(t_0\)</span> and <span class="math inline">\(t_{k+1}\)</span>; the default is <span class="math inline">\([0,1]\)</span>. The slot <code>knots</code>
-represents the spline knots, which is <span class="math inline">\((t_1,\dots,t_k)\)</span>, an equally spaced
-sequence is chosen by the function automatically (<span class="math inline">\(t_j = t_0 +
-j\cdot\frac{t_{k+1}-t_0}{k+1}\)</span>) when not assigned. The slot
-<code>intercept</code> is used to define whether an intercept is
-included in the basis; the default value is TRUE, and must be TRUE. The
-slot <code>df</code> is the degrees of freedom of the basis, which is
-the number of the splines, equal to <span class="math inline">\(p+k+1\)</span>. By default <span class="math inline">\(k =0\)</span> and <span class="math inline">\(\text{df} = p+1\)</span>. The slot
-<code>degree</code> is the degree of the splines, which is the degree of
-piecewise polynomials, <span class="math inline">\(p\)</span>; the
-default value is 3. See degree in bs.</p>
-<div id="s4-class-bspline_basis-and-bspline_series" class="section level4">
-<h4>S4 class <code>bspline_basis</code> and
+<span class="math inline">\([t_0, t_{k+1}]\)</span> is defined
+recursively as follows: - For <span class="math inline">\(p =
+0\)</span>, <span class="math display">\[
+  B_{i,0}(x) = \begin{cases}
+    I_{(t_i, t_{i+1}]}(x), &amp; i = 0, 1, \dots, k, \\
+    0, &amp; \text{otherwise}.
+  \end{cases}
+  \]</span> - For <span class="math inline">\(p &gt; 0\)</span>, the
+recursion is given by <span class="math display">\[
+  B_{i,p}(x) = \frac{x-t_i}{t_{i+p}-t_i} B_{i,p-1}(x) +
+\frac{t_{i+p+1}-x}{t_{i+p+1}-t_{i+1}} B_{i+1,p-1}(x).
+  \]</span></p>
+<p>At discontinuities in the interval <span class="math inline">\((t_0,t_k)\)</span>, the basis function is defined
+as its limit, <span class="math inline">\(B_{i,p}(x) = \lim_{t\to x}
+B_{i,p}(t)\)</span>, to ensure continuity.</p>
+<div id="s4-classes-bspline_basis-and-bspline_series" class="section level4">
+<h4>S4 Classes <code>bspline_basis</code> and
 <code>bspline_series</code></h4>
-<p>In the <strong>MECfda</strong> package, we have an s4 class,
-<code>bspline_basis</code> that represents a b-spline basis, <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>, on the
-interval <span class="math inline">\([t_0,t_{k+1}]\)</span>. We also
-have an s4 class, <code>bspline_series</code>, that represents the
-summation <span class="math inline">\(\sum_{i=0}^{k}b_i
-B_{i,p}(x)\)</span>. The slot <code>coef</code> contains the b-spline
-coefficients, <span class="math inline">\(b_i\)</span>. (<span class="math inline">\(i = 0,\dots,k\)</span>) The slot
-<code>bspline_basis</code> is a <code>bspline_basis</code> object, that
-represents the b-spline basis used, <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>.</p>
-<p>The method <code>plot</code> for class <code>bspline_basis</code> is
-provided to generate a visual representation of the summation function.
-The method <code>bsplineSeries2fun</code> is provided to compute the
-value of the summation function. The argument <code>object</code> should
-be an object of the <code>bspline_series</code> class. The argument
-<code>x</code> is the value of the independent variable <span class="math inline">\(x\)</span>.</p>
+<p>The s4 class <code>bspline_basis</code> represents a b-spline basis,
+<span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>, on the
+interval <span class="math inline">\([t_0, t_{k+1}]\)</span>. Its key
+slots include:</p>
+<ul>
+<li><strong><code>Boundary.knots</code></strong>: The boundary <span class="math inline">\([t_0, t_{k+1}]\)</span>, (default is <span class="math inline">\([0,1]\)</span>);</li>
+<li><strong><code>knots</code></strong>: The internal spline knots,
+<span class="math inline">\((t_1,\dots,t_k)\)</span>, (automatically
+generated as equally spaced, <span class="math inline">\(t_j = t_0 +
+j\cdot\frac{t_{k+1}-t_0}{k+1}\)</span>, if not assigned);</li>
+<li><strong><code>intercept</code></strong>: Indicates whether an
+intercept is included (default is <code>TRUE</code>);</li>
+<li><strong><code>df</code></strong>: Degrees of freedom of the basis,
+which is the number of the splines, equal to <span class="math inline">\(p + k + 1\)</span> (by default <span class="math inline">\(k =0\)</span> and <span class="math inline">\(\text{df} = p+1\)</span>);</li>
+<li><strong><code>degree</code></strong>: The degree of the spline,
+which is the degree of piecewise polynomials, <span class="math inline">\(p\)</span>, (default is 3).</li>
+</ul>
+<p>The s4 class <code>bspline_series</code> represents the linear
+combination</p>
+<p><span class="math display">\[
+\sum_{i=0}^{k} b_i B_{i,p}(x),
+\]</span></p>
+<p>where the slot <strong><code>coef</code></strong> stores the
+coefficients <span class="math inline">\(b_i\)</span> (<span class="math inline">\(i = 0,\dots,k\)</span>) and
+<strong><code>bspline_basis</code></strong> specifies the associated
+basis (represented by a <code>bspline_basis</code> object).</p>
+<p>Methods such as <code>plot</code> and <code>bsplineSeries2fun</code>
+are provided for visualization and function evaluation.</p>
+<!-- 
+The method `bsplineSeries2fun` is provided to compute the value of the summation function. 
+The argument `object`   should be an object of the `bspline_series` class.
+The argument `x` is the value of the independent variable $x$.
+-->
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>bsb <span class="ot">=</span> <span class="fu">bspline_basis</span>(</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">Boundary.knots =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">24</span>),</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">df             =</span> <span class="dv">7</span>,</span>
@@ -672,7 +749,7 @@ be an object of the <code>bspline_series</code> class. The argument
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">bspline_basis =</span> bsb</span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>)</span>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">plot</span>(bss)</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">bsplineSeries2fun</span>(bss,<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">24</span>,<span class="fl">0.5</span>))</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt;  [1] 2.0000000 1.7677509 1.5690908 1.4011502 1.2610597 1.1459499 1.0529514</span></span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;  [8] 0.9791948 0.9218107 0.8779297 0.8446824 0.8191993 0.7986111 0.7805266</span></span>
@@ -688,14 +765,79 @@ be an object of the <code>bspline_series</code> class. The argument
 \frac52B_{i,2}(x) +\frac{19}{10}B_{i,3}(x),\]</span> where <span class="math inline">\(x\in[t_0,t_4]\)</span> and <span class="math inline">\(t_0=0\)</span>, <span class="math inline">\(t_k =
 t_{k-1}+6\)</span> ,<span class="math inline">\(k=1,2,3,4\)</span>.</p>
 </div>
-<div id="basis2fun" class="section level4">
-<h4>basis2fun</h4>
-<p>A generic function, <code>basis2fun</code>, is provided for the class
-<code>Fourier_series</code> and <code>bspline_series</code>. When
-applied to a <code>Fourier_series</code> object, it is equivalent to
-method <code>FourierSeries2fun</code>. When applied to a
-<code>bspline_series</code> object, it is equivalent to method
-<code>bsplineSeries2fun</code>.</p>
+</div>
+<div id="eigenfunction-basis" class="section level3">
+<h3>Eigenfunction basis</h3>
+<p>Suppose <span class="math inline">\(K(s,t)\in L^2(\Omega\times
+\Omega)\)</span>, <span class="math inline">\(f(t)\in
+L^2(\Omega)\)</span>. Then <span class="math inline">\(K\)</span>
+induces an linear operator <span class="math inline">\(\mathcal{K}\)</span> by <span class="math display">\[(\mathcal{K}f)(x) = \int_{\Omega}
+K(t,x)f(t)dt\]</span> If <span class="math inline">\(\xi \in
+L^2(\Omega)\)</span> such that <span class="math display">\[\mathcal{K}\xi = \lambda \xi\]</span> where <span class="math inline">\(\lambda\in \mathbb{C}\)</span>, we call <span class="math inline">\(\xi\)</span> an eigenfunction/eigenvector of <span class="math inline">\(\mathcal{K}\)</span>, and <span class="math inline">\(\lambda\)</span> an eigenvalue associated with
+<span class="math inline">\(\xi\)</span>.</p>
+<p>For a stochastic process <span class="math inline">\(\{X(t),t\in\Omega\}\)</span> we call the
+orthogonal basis, <span class="math inline">\(\{\xi_k\}_{k=1}^\infty\)</span> corresponding to
+eigenvalues <span class="math inline">\(\{\lambda_k\}_{k=1}^\infty\)</span> (<span class="math inline">\(\lambda_1\geq\lambda_2\geq\dots\)</span>), induced
+by <span class="math display">\[K(s,t)=\operatorname{Cov}(X(t),X(s))\]</span> a
+functional principal component (FPC) basis for <span class="math inline">\(L^2(\Omega)\)</span>.</p>
+<p>The eigenfunction basis relies on the covariance function <span class="math inline">\(K(s,t)\)</span>. And we usually cannot
+analytically express the equation of the basis funcitons in
+eigenfunction basis. In practice, the covariance function is estimated
+from the data and the eigenfunctions are computed numerically.</p>
+</div>
+<div id="numerical-basis" class="section level3">
+<h3>Numerical Basis</h3>
+<p>Sometimes, analytical expressions for the basis functions are not
+available. In these cases, they can be represented numerically. Let
+<span class="math inline">\(\{\rho_k\}_{k=1}^\infty\)</span> denote a
+basis of the function space. We can numerically approximate the basis by
+storing the values of a finite subset of these functions at a finite set
+of points in the domain, i.e., <span class="math inline">\(\rho_k(t_j)\)</span> for <span class="math inline">\(k=1,\dots,p\)</span> and <span class="math inline">\(j=1,\dots,m\)</span>.</p>
+<div id="s4-class-numeric_basis-and-numericbasis_series" class="section level4">
+<h4>S4 Class <code>numeric_basis</code> and
+<code>numericBasis_series</code></h4>
+<p>In this package, the s4 class <code>numeric_basis</code> is designed
+to represent a finite sequence of functions <span class="math inline">\(\{\rho_k\}_{k=1}^p\)</span> by their values at a
+finite set of points within their domain. In this context, all functions
+share the same domain, which is assumed to be an interval. The key slots
+include:</p>
+<ul>
+<li><strong><code>basis_function</code></strong>: The matrix <span class="math inline">\((\zeta_{jk})_{m \times p}\)</span>, where each
+element is defined as <span class="math inline">\(\zeta_{jk} =
+\rho_k(t_j)\)</span> for <span class="math inline">\(j = 1, \dots,
+m\)</span> and <span class="math inline">\(k = 1, \dots, p\)</span>. In
+this matrix, each row corresponds to a point in the domain, and each
+column corresponds to a specific basis function.</li>
+<li><strong><code>t_points</code></strong>: A numeric vector that
+represents the points in the domain at which the basis functions are
+evaluated. The <span class="math inline">\(j\)</span>-th element of this
+vector corresponds to the <span class="math inline">\(j\)</span>-th row
+of the <code>basis_function</code> matrix.</li>
+<li><strong><code>t_0</code></strong> and
+<strong><code>period</code></strong>: The left endpoint and length of
+the domain, respectively.</li>
+</ul>
+<p>Additionally, the package provides an s4 class
+<code>numericBasis_series</code>, which represents a linear combination
+of the basis functions represented by a <code>numeric_basis</code>
+object. The key slots include:</p>
+<ul>
+<li><strong><code>coef</code></strong>: The linear coefficients for the
+summation series.</li>
+<li><strong><code>numeric_basis</code></strong>: Function basis as
+represented by a <code>numeric_basis</code> object.</li>
+</ul>
+</div>
+<div id="function-basis2fun" class="section level4">
+<h4>Function <code>basis2fun</code></h4>
+<p>The generic function <code>basis2fun</code> is provided for
+<code>Fourier_series</code>, <code>bspline_series</code>, and
+<code>numericBasis_series</code> objects. For a
+<code>Fourier_series</code> object, it is equivalent to
+<code>FourierSeries2fun</code>; for a <code>bspline_series</code>
+object, it is equivalent to <code>bsplineSeries2fun</code>; For a
+<code>numericBasis_series</code> object, it is equivalent to
+<code>numericBasisSeries2fun</code>.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">basis2fun</span>(fsc,<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="fl">0.05</span>))</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;  [1]  2.1666667  3.1712610  3.6252757  3.4344848  2.7346112  1.8333333</span></span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  [7]  1.0888125  0.7715265  0.9623175  1.5254623  2.1666667  2.5532270</span></span>
@@ -711,28 +853,16 @@ method <code>FourierSeries2fun</code>. When applied to a
 <span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; [43] 1.9636285 2.0433759 2.0952418 2.1130317 2.0905511 2.0216053 1.9000000</span></span></code></pre></div>
 </div>
 </div>
-<div id="eigenfunction-basis" class="section level3">
-<h3>Eigenfunction basis</h3>
-<p>Suppose <span class="math inline">\(K(s,t)\in L^2(\Omega\times
-\Omega)\)</span>, <span class="math inline">\(f(t)\in
-L^2(\Omega)\)</span>. Then <span class="math inline">\(K\)</span>
-induces an linear operator <span class="math inline">\(\mathcal{K}\)</span> by <span class="math display">\[(\mathcal{K}f)(x) = \int_{\Omega}
-K(t,x)f(t)dt\]</span> If <span class="math inline">\(\xi(\cdot)\in
-L^2(\Omega)\)</span> such that <span class="math display">\[\mathcal{K}\xi = \lambda \xi\]</span> where <span class="math inline">\(\lambda\in C\)</span>, we call <span class="math inline">\(\xi\)</span> an eigenfunction/eigenvector of <span class="math inline">\(\mathcal{K}\)</span>, and <span class="math inline">\(\lambda\)</span> an eigenvalue associated with
-<span class="math inline">\(\xi\)</span>.</p>
-<p>All the eigenfunctions of <span class="math inline">\(\mathcal{K}\)</span> make a basis of <span class="math inline">\(L^2(\Omega)\)</span>. We call the basis induced by
-<span class="math display">\[K(s,t)=\text{Cov}(X(t),X(s))\]</span> a
-functional principal component (FPC) basis, where <span class="math inline">\(\{X(t),t\in\Omega\}\)</span> is a stochastic
-process.</p>
-</div>
 <div id="basis-expansion-methods-for-the-functional_variable-class" class="section level3">
 <h3>Basis expansion methods for the <code>functional_variable</code>
 class</h3>
 <p>The <strong>MECfda</strong> pakcage provide the methods
-<code>fourier_basis_expansion</code> and
-<code>bspline_basis_expansion</code> for the class
+<code>fourier_basis_expansion</code>,
+<code>bspline_basis_expansion</code>, <code>FPC_basis_expansion</code>,
+and <code>numeric_basis_expansion</code> for the class
 <code>functional_variable</code>, which perform basis expansion using
-Fourier basis and b-spline basis respectively.</p>
+Fourier basis, b-spline basis, functional principal component basis, and
+numerical basis respectively.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.0</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>fv <span class="ot">=</span> MECfda.data.sim.<span class="fl">0.0</span><span class="sc">$</span>FC[[<span class="dv">1</span>]]</span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>BE.fs <span class="ot">=</span> <span class="fu">fourier_basis_expansion</span>(fv,<span class="dv">5</span><span class="dt">L</span>)</span>
@@ -741,10 +871,14 @@ Fourier basis and b-spline basis respectively.</p>
 </div>
 <div id="numerical-computation-of-integrals" class="section level2">
 <h2>Numerical Computation of Integrals</h2>
-<p>We use <span class="math display">\[\frac{1}{|T|}\sum_{t\in T}
-\rho_{k}(t) X_{i}(t)\]</span> to compute the integral <span class="math display">\[\int_{\Omega} \rho_{k}(t) X_{i}(t) dt\]</span>
-where <span class="math inline">\(T\)</span> is the measurement (time)
-points of <span class="math inline">\(X_{i}(t)\)</span>, and <span class="math inline">\(|T|\)</span> represents the cardinal number of
+<p>The package approximates the integral</p>
+<p><span class="math display">\[
+\int_{\Omega} \rho_{k}(t) X_{i}(t) \, dt \approx \frac{\mu(\Omega)}{|T|}
+\sum_{t \in T} \rho_{k}(t) X_{i}(t),
+\]</span></p>
+<p>where <span class="math inline">\(\mu(\cdot)\)</span> denote the
+Lebesgue measure. <span class="math inline">\(T\)</span> denotes the set
+of measurement time points for <span class="math inline">\(X_i(t)\)</span> and <span class="math inline">\(|T|\)</span> represents the cardinal number of
 <span class="math inline">\(T\)</span>.</p>
 </div>
 </div>
@@ -756,71 +890,90 @@ points of <span class="math inline">\(X_{i}(t)\)</span>, and <span class="math i
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>             <span class="at">basis.type =</span> <span class="fu">c</span>(<span class="st">&quot;Fourier&quot;</span>, <span class="st">&quot;Bspline&quot;</span>), <span class="at">basis.order =</span> <span class="dv">6</span><span class="dt">L</span>, </span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>             <span class="at">bs_degree =</span> <span class="dv">3</span>)</span></code></pre></div>
 <p>The <strong>MECfda</strong> package provides a function,
-<code>fcRegression</code>, to fit generalized linear mixed effect
-models, including ordinary linear models, and generalized linear models
-with fixed and random effects, using basis expansion to discretize the
-function-valued covariates. The function <code>fcRegression</code> can
-solve a linear model in the following form: <span class="math display">\[g(E(Y_i|X_i,Z_i)) = \sum_{l=1}^{L}
-\int_{\Omega_l} \beta_l(t) X_{li}(t) dt + (1,Z_i^T)\gamma.\]</span> The
-function can allow one or multiple function-valued covariates to be used
-as fixed effects, and zero, one, or multiple scalar-valued covariates to
-be used as fixed or random effects. Response variable, function-valued
-covariates, and scalar-valued covariates are input separately as three
-different arguments, <code>Y</code>, <code>FC</code>, and
-<code>Z</code>, respectively. The format of the input data can be very
-flexible. For response variable, the input format can be an atomic
-vector, a one-column matrix or data frame. The recommended form is a
-one-column data frame or matrix with a column name, because in this
-case, the name of response variable is specified. For function-valued
-covariates, a <code>functional_variable</code> object or a matrix or a
-data frame or a list of these objects can be accepted as input data.
-When one <code>functional_variable</code> object, matrix or, data frame
-is input as argument <code>FC</code>, only one function-valued covariate
-is included in the model. When a list of these objects is input as
-argument <code>FC</code>, the model can have multiple function-valued
-covariates, with each element of the list corresponding to a different
-function-valued covariate. For of scalar-valued covariates, a matrix,
-data frame, atomic vector, <code>NULL</code>, or, no input can be
-accepted as input data. When argument <code>Z</code> is not assigned, no
-scalar-valued covariate is included in the model and argument
-<code>formula.Z</code> should also be <code>NULL</code>, or no input.
-When an atomic vector is input as argument <code>Z</code>, only one
-scalar-valued is included in the model, and, the name of the
-scalar-valued covariate is not specified. So even if only one
-scalar-valued covariate is included in the model, a matrix or data frame
-with column name is recommended as the input for argument
-<code>Z</code>. The argument <code>formula.Z</code> is used to specify
-which part of the argument <code>Z</code> is used and whether to treat
-scalar-valued covariates as fixed effects or random effects. The
-argument <code>family</code> can specify the distribution type of the
-response variable and link function to be used in the regression. The
-argument <code>basis.type</code> indicate the type of basis function to
-be used in basis expansion process. Available options are ‘Fourier’ and
-‘Bspline’, representing the Fourier basis and the b-spline basis,
-respectively. The argument <code>basis.order</code> indicates the number
-of function basis to be used. When using the Fourier basis <span class="math inline">\(\frac{1}{2},\sin k t, \cos k t, k =
-1,\dots,p_f\)</span>, <code>basis.order</code> is the number <span class="math inline">\(p_f\)</span>. When using the b-splines basis <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>,
-<code>basis.order</code> is the number of splines, equal to <span class="math inline">\(k+p+1\)</span>. The argument
-<code>bs_degree</code> specifies the degree of the piecewise polynomials
-of the b-spline basis function if using the b-splines basis, and is only
-needed when using the b-spline basis.</p>
-<p>The function <code>fcRegression</code> returns an object of s3 class
-<code>fcRegression</code>. as a list that containing the following
-elements.</p>
+<code>fcRegression</code>, for fitting generalized linear mixed-effect
+models—including ordinary linear models and generalized linear models
+with fixed and random effects—by discretizing function-valued covariates
+using basis expansion. The function can solve a linear model of the
+form</p>
+<p><span class="math display">\[
+g\bigl(E(Y_i\mid X_i,Z_i)\bigr) = \sum_{l=1}^{L} \int_{\Omega_l}
+\beta_l(t) X_{li}(t) \, dt + (1,Z_i^T)\gamma.
+\]</span></p>
+<p>It supports one or multiple function-valued covariates as fixed
+effects, and zero, one, or multiple scalar covariates, which can be
+specified as either fixed or random effects. The response variable,
+function-valued covariates, and scalar covariates are supplied
+separately via the arguments <code>Y</code>, <code>FC</code>, and
+<code>Z</code>, respectively, allowing great flexibility in data
+format.</p>
+<ul>
+<li><p><strong>Response Variable:</strong><br />
+The response can be provided as an atomic vector, a one-column matrix,
+or a data frame. However, a one-column data frame or matrix with a
+column name is recommended so that the response variable’s name is
+clearly specified.</p></li>
+<li><p><strong>Function-Valued Covariates:</strong><br />
+The function-valued covariates can be input as a
+<code>functional_variable</code> object, a matrix, a data frame, or a
+list of these objects. If a single <code>functional_variable</code>
+object (or matrix or data frame) is provided via <code>FC</code>, the
+model includes one function-valued covariate. If a list is provided, the
+model accommodates multiple function-valued covariates, with each
+element in the list representing a distinct covariate.</p></li>
+<li><p><strong>Scalar Covariates:</strong><br />
+Scalar covariates can be provided as a matrix, data frame, atomic
+vector, or even <code>NULL</code> if no scalar covariates are present.
+If <code>Z</code> is omitted or set to <code>NULL</code>, no scalar
+covariate is included and the argument <code>formula.Z</code> should
+also be <code>NULL</code> or omitted. When an atomic vector is used for
+<code>Z</code>, it represents a single scalar covariate (without a
+name). Hence, even when only one scalar covariate is included, it is
+recommended to supply it as a matrix or data frame with a column name.
+The <code>formula.Z</code> argument specifies which parts of
+<code>Z</code> to use and whether scalar covariates should be treated as
+fixed or random effects.</p></li>
+</ul>
+<p>Other key arguments include:</p>
+<ul>
+<li><strong><code>family</code>:</strong> Specifies the response
+variable’s distribution and the link function to be used.</li>
+<li><strong><code>basis.type</code>:</strong> Indicates the type of
+basis function for the expansion. Options include
+<code>&#39;Fourier&#39;</code>, <code>&#39;Bspline&#39;</code>, and <code>&#39;FPC&#39;</code>,
+corresponding to the Fourier basis, b-spline basis, and functional
+principal component basis, respectively.</li>
+<li><strong><code>basis.order</code>:</strong> Specifies the number of
+basis functions to use. For the Fourier basis (i.e., <span class="math inline">\(\frac{1}{2},\ \sin(kt),\ \cos(kt)\)</span> for
+<span class="math inline">\(k = 1, \dots, p_f\)</span>),
+<code>basis.order</code> equals <span class="math inline">\(p_f\)</span>. For the b-spline basis <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>,
+<code>basis.order</code> is set to <span class="math inline">\(k+p+1\)</span>. For the FPC basis,
+<code>basis.order</code> represents the number of functional principal
+components.</li>
+<li><strong><code>bs_degree</code>:</strong> Specifies the degree of the
+piecewise polynomials for the b-spline basis; this argument is only
+necessary when using the b-spline basis.</li>
+</ul>
+<p>The function returns an s3 object of class <code>fcRegression</code>,
+which is a list containing the following elements:</p>
 <ol style="list-style-type: decimal">
-<li>regression_result: Result of the regression.</li>
-<li>FC.BasisCoefficient: A list of Fourier_series or bspline_series
-objects, representing the function-valued linear coefficients of the
-function-valued covariates.</li>
-<li>function.basis.type: Type of function basis used.</li>
-<li>basis.order: Same as in the arguments.</li>
-<li>data: Original data.</li>
-<li>bs_degree: Degree of splines, returned only if the b-splines basis
-is used.</li>
+<li><strong>regression_result:</strong> The result of the regression
+analysis.</li>
+<li><strong>FC.BasisCoefficient:</strong> A list of
+<code>Fourier_series</code>, <code>bspline_series</code>, or
+<code>numericBasis_series</code> objects representing the
+function-valued linear coefficients of the covariates.</li>
+<li><strong>function.basis.type:</strong> The type of basis used.</li>
+<li><strong>basis.order:</strong> The number of basis functions used, as
+specified in the input.</li>
+<li><strong>data:</strong> The original data provided to the model.</li>
+<li><strong>bs_degree:</strong> The degree of the b-spline basis, same
+as specified in the input (included only when the b-spline basis is
+used).</li>
 </ol>
-<p>We can use the method <code>predict</code> to get a predicted value
-from the model. We can use the method <code>fc.beta</code> to get the
-values of function-valued linear coefficient parameters, <span class="math inline">\(\beta_l(t)\)</span>.</p>
+<p>Additionally, the <code>predict</code> method can be used to obtain
+predicted values from the fitted model, and the <code>fc.beta</code>
+method is available to evaluate the estimated function-valued
+coefficient parameters <span class="math inline">\(\beta_l(t)\)</span>.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.0</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">fcRegression</span>(<span class="at">FC =</span> MECfda.data.sim.<span class="fl">0.0</span><span class="sc">$</span>FC, </span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>                   <span class="at">Y=</span>MECfda.data.sim.<span class="fl">0.0</span><span class="sc">$</span>Y, </span>
@@ -830,9 +983,9 @@ values of function-valued linear coefficient parameters, <span class="math inlin
 <span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>                   <span class="at">formula.Z =</span> <span class="sc">~</span> Z_1 <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>Z_2))</span>
 <span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>t <span class="ot">=</span> (<span class="dv">0</span><span class="sc">:</span><span class="dv">100</span>)<span class="sc">/</span><span class="dv">100</span></span>
 <span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> t, <span class="at">y =</span> <span class="fu">fc.beta</span>(res,<span class="dv">1</span>,t), <span class="at">ylab =</span> <span class="fu">expression</span>(beta[<span class="dv">1</span>](t)))</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> t, <span class="at">y =</span> <span class="fu">fc.beta</span>(res,<span class="dv">2</span>,t), <span class="at">ylab =</span> <span class="fu">expression</span>(beta[<span class="dv">2</span>](t)))</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">1.0</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">predict</span>(<span class="at">object =</span> res, <span class="at">newData.FC =</span> MECfda.data.sim.<span class="fl">1.0</span><span class="sc">$</span>FC,</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>        <span class="at">newData.Z =</span> MECfda.data.sim.<span class="fl">1.0</span><span class="sc">$</span>Z)</span>
@@ -844,40 +997,44 @@ values of function-valued linear coefficient parameters, <span class="math inlin
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">fcQR</span>(Y, FC, Z, formula.Z, <span class="at">tau =</span> <span class="fl">0.5</span>, <span class="at">basis.type =</span> <span class="fu">c</span>(<span class="st">&quot;Fourier&quot;</span>, <span class="st">&quot;Bspline&quot;</span>),</span>
 <span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>     <span class="at">basis.order =</span> <span class="dv">6</span><span class="dt">L</span>, <span class="at">bs_degree =</span> <span class="dv">3</span>)</span></code></pre></div>
 <p>The <strong>MECfda</strong> package provides a function,
-<code>fcQR</code>, for fitting quantile linear regression models. The
-method for addressing function-valued covariates is discretization using
-basis expansion. The function <code>fcQR</code> can solve a linear model
-in the following form: <span class="math display">\[Q_{Y_i|X_i,Z_i}(\tau) =
+<code>fcRegression</code>, for fitting quantile linear regression models
+by discretizing function-valued covariates using basis expansion. The
+function can solve a linear model of the form</p>
+<p><span class="math display">\[Q_{Y_i|X_i,Z_i}(\tau) =
 \sum_{l=1}^L\int_{\Omega_l} \beta_l(\tau,t) X_{li}(t) dt
-+  (1,Z_i^T)\gamma.\]</span> The function allows one or multiple
-function-valued covariates, and zero, one, or multiple scalar-valued
-covariates. Data input occurs as described for the function
-<code>fcRegression</code>. The treatment of the scalar-valued covariates
-is specified by the argument <code>formula.Z</code>, similar to the
-function <code>fcRegression</code>. The only difference between function
-fcQR and function fcRegression is that the quantile linear regression
-model does not include a random effect. The quantile <span class="math inline">\(\tau\)</span> is specified by the argument
-<code>tau</code>. The type and parameters of the basis function are
-specified bythe argument <code>basis.type</code>,
-<code>basis.order</code>, and <code>bs_degree</code>, as described for
-the function <code>fcRegression</code>.</p>
-<p>The function <code>fcQR</code> returns an object of s3 class
-<code>fcQR</code>, as a list that contains containing the following
-elements.</p>
++  (1,Z_i^T)\gamma.\]</span> The function supports one or multiple
+function-valued covariates, as well as zero, one, or multiple
+scalar-valued covariates. Data input follows the same guidelines as for
+the <code>fcRegression</code> function, and the treatment of scalar
+covariates is determined by the <code>formula.Z</code> argument. The
+primary difference between <code>fcQR</code> and
+<code>fcRegression</code> is that the quantile linear regression model
+does not incorporate random effects. The quantile <span class="math inline">\(\tau\)</span> is specified by the argument
+<code>tau</code>, and the type and parameters of the basis functions are
+defined by the <code>basis.type</code>, <code>basis.order</code>, and
+<code>bs_degree</code> arguments, just as in
+<code>fcRegression</code>.</p>
+<p>The function returns an s3 object of class <code>fcQR</code>, which
+is a list containing the following elements:</p>
 <ol style="list-style-type: decimal">
-<li>regression_result: Result of the regression.</li>
-<li>FC.BasisCoefficient: A list of Fourier_series or bspline_series
-objects, representing the function-valued linear coefficients of the
-function-valued covariates.</li>
-<li>function.basis.type: Type of function basis used.</li>
-<li>basis.order: Same as in the arguments.</li>
-<li>data: Original data.</li>
-<li>bs_degree: Degree of the splines, returned only if the b-splines
-basis is used.</li>
+<li><strong>regression_result:</strong> The result of the regression
+analysis.</li>
+<li><strong>FC.BasisCoefficient:</strong> A list of
+<code>Fourier_series</code>, <code>bspline_series</code>, or
+<code>numericBasis_series</code> objects representing the
+function-valued linear coefficients of the covariates.</li>
+<li><strong>function.basis.type:</strong> The type of basis used.</li>
+<li><strong>basis.order:</strong> The number of basis functions used, as
+specified in the input.</li>
+<li><strong>data:</strong> The original data provided to the model.</li>
+<li><strong>bs_degree:</strong> The degree of the b-spline basis, same
+as specified in the input (included only when the b-spline basis is
+used).</li>
 </ol>
-<p>We can use the method <code>predict</code> to obtain a predicted
-value from the model and use the method <code>fc.beta</code> to obtain
-the values of function-valued linear coefficient parameters <span class="math inline">\(\beta_l(t)\)</span>.</p>
+<p>Additionally, the <code>predict</code> method can be used to obtain
+predicted values from the fitted model, and the <code>fc.beta</code>
+method is available to evaluate the estimated function-valued
+coefficient parameters <span class="math inline">\(\beta_l(t)\)</span>.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.0</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">fcQR</span>(<span class="at">FC =</span> MECfda.data.sim.<span class="fl">0.0</span><span class="sc">$</span>FC, </span>
 <span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>           <span class="at">Y=</span>MECfda.data.sim.<span class="fl">0.0</span><span class="sc">$</span>Y, </span>
@@ -887,9 +1044,9 @@ the values of function-valued linear coefficient parameters <span class="math in
 <span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>           <span class="at">formula.Z =</span> <span class="sc">~</span> .)</span>
 <span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>t <span class="ot">=</span> (<span class="dv">0</span><span class="sc">:</span><span class="dv">100</span>)<span class="sc">/</span><span class="dv">100</span></span>
 <span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> t, <span class="at">y =</span> <span class="fu">fc.beta</span>(res,<span class="dv">1</span>,t), <span class="at">ylab =</span> <span class="fu">expression</span>(beta[<span class="dv">1</span>](t)))</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> t, <span class="at">y =</span> <span class="fu">fc.beta</span>(res,<span class="dv">2</span>,t), <span class="at">ylab =</span> <span class="fu">expression</span>(beta[<span class="dv">2</span>](t)))</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">1.0</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">predict</span>(<span class="at">object =</span> res, <span class="at">newData.FC =</span> MECfda.data.sim.<span class="fl">1.0</span><span class="sc">$</span>FC,</span>
 <span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>        <span class="at">newData.Z =</span> MECfda.data.sim.<span class="fl">1.0</span><span class="sc">$</span>Z)</span>
@@ -899,7 +1056,7 @@ the values of function-valued linear coefficient parameters <span class="math in
 </div>
 <div id="measurement-error-models-and-bias-correction-estimation-methods" class="section level1">
 <h1>Measurement Error Models and Bias Correction Estimation Methods</h1>
-<p>Data collected in real- world settings often include measurement
+<p>Data collected in real-world settings often include measurement
 error, especially function-valued data. Measurement error in a data set
 may result in estimation bias. The *MECfda** package also provides bias
 correction estimation method functions for certain linear regression
@@ -1014,54 +1171,82 @@ multi-point-wise (MP_MEM) estimation procedures to avoid potential
 computational complexities caused by analyses of multi-level functional
 data and computations of potentially intractable and complex
 integrals.</p>
-<p>The <strong>MECfda</strong> package provides a function
-<code>ME.fcRegression_MEM</code> for application to the bias correction
-estimation method. The response variable, function-valued covariates,
-and scalar-valued covariates are input separately as three different
-arguments. The argument <code>data.Y</code> is the response variable.
-Inputs can be an atomic vector, a one-column matrix or data frame,
-recommended form is a one-column data frame with column name. The
-argument <code>data.W</code> is the data for <span class="math inline">\(W\)</span>, the measurement of <span class="math inline">\(X\)</span>, in the statistical model. The input
-should be a 3-dimensional array. in which each row represents a subject,
-each column represent a measurement (time) point, each layer represents
-an observation. The argument <code>data.Z</code> is the data for the
-scalar covariates, It can be no input or <code>NULL</code> if the model
-does not include a scalar covariate, input in the form of an atomic
-vector when the model includes only one scalar covariate, or input as a
-matrix or data frame, with the recommended form being a data frame with
-column names. The argument <code>method</code> specifies the method for
-constructing the substitution <span class="math inline">\(X\)</span>.
-Available options includes <code>&#39;UP_MEM&#39;</code>, <code>&#39;MP_MEM&#39;</code>,
-and <code>&#39;average&#39;</code>. The argument <code>t_interval</code>
-specifies the domain of the function-valued covariate and should be a
-2-element vector, representing an interval. The default is
-<code>c(0,1)</code>, represent interval <span class="math inline">\([0,1]\)</span>. The argument <code>t_points</code>
-is the sequence of measurement (time) points, and the default is
-<code>NULL</code>. The argument <code>d</code> is the number of
-measurement (time) points involved for <code>MP_MEM</code> (the default
-value is 3, which is also the minimum value). The argument
-<code>family.W</code> is the distribution of <span class="math inline">\(W\)</span> given <span class="math inline">\(X\)</span>, and available options are
-<code>&#39;gaussian&#39;</code> and <code>&#39;poisson&#39;</code>. The argument
-<code>family.Y</code> is a description of the error distribution and
-link function to be used in the model. See <code>stats::family</code>.
-The argument <code>formula.Z</code> is used to specify which part of the
-argument <code>Z</code> is used and whether to treat the scalar-valued
-covariates, as fixed effects or random effects. The argument
-<code>basis.type</code> indicates the type of basis function to be used
-in the basis expansion process. Available options are
-<code>&#39;Fourier&#39;</code> and <code>&#39;Bspline&#39;</code>, representing Fourier
-basis and b-spline basis respectively. The argument
-<code>basis.order</code> indicates number of the function basis to be
-used. When using Fourier basis <span class="math inline">\(\frac{1}{2},\sin k t, \cos k t, k =
-1,\dots,p_f\)</span>, <code>basis.order</code> is the number <span class="math inline">\(p_f\)</span>. When using b-splines basis, <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>,
-<code>basis.order</code> is the number of splines, equal to <span class="math inline">\(k+p+1\)</span>. The argument
-<code>bs_degree</code> specifies the degree of the piecewise polynomials
-of b-spline basis function if use b-splines basis. This argument is need
-only when using b-spline basis. The argument <code>smooth</code>
-specifies whether to smooth the substitution of <span class="math inline">\(X\)</span>, and the default is FALSE. The argument
-<code>silent</code> specifies whether not to show the statuse of the
-running of the function, and the default is TRUE.</p>
-<p>The function ME.fcRegression_MEM returns a fcRegression object.</p>
+<p>The <strong>MECfda</strong> package provides the function
+<code>ME.fcRegression_MEM</code> for applying bias-correction estimation
+methods. In this function, the response variable, function-valued
+covariates, and scalar covariates are supplied separately via the
+arguments <code>data.Y</code>, <code>data.W</code>, and
+<code>data.Z</code>, respectively.</p>
+<ul>
+<li><p><strong><code>data.Y</code> (Response Variable):</strong><br />
+The response variable can be provided as an atomic vector, a one-column
+matrix, or a data frame. However, a one-column data frame with a column
+name is recommended so that the response variable is explicitly
+identified.</p></li>
+<li><p><strong><code>data.W</code> (Measurement Data):</strong><br />
+This argument represents <span class="math inline">\(W\)</span>, the
+observed measurement of the true function-valued covariate <span class="math inline">\(X\)</span> in the statistical model. It should be
+provided as a three-dimensional array where each row corresponds to a
+subject, each column to a measurement (time) point, and each layer to a
+separate observation.</p></li>
+<li><p><strong><code>data.Z</code> (Scalar Covariates):</strong><br />
+The scalar covariates can be input as a matrix, data frame, or atomic
+vector. If the model does not include any scalar covariates,
+<code>data.Z</code> can be omitted or set to <code>NULL</code>. For a
+single scalar covariate, although an atomic vector is acceptable, a data
+frame or matrix with a column name is recommended. For multiple scalar
+covariates, use a matrix or data frame with named columns.</p></li>
+</ul>
+<p>Other key arguments include:</p>
+<ul>
+<li><strong><code>method</code>:</strong> Specifies the method for
+constructing the substitute for <span class="math inline">\(X\)</span>;
+available options are <code>&#39;UP_MEM&#39;</code>, <code>&#39;MP_MEM&#39;</code>, and
+<code>&#39;average&#39;</code>.</li>
+<li><strong><code>t_interval</code>:</strong> Defines the domain of the
+function-valued covariate as a two-element vector (default is
+<code>c(0,1)</code>, representing the interval <span class="math inline">\([0,1]\)</span>).</li>
+<li><strong><code>t_points</code>:</strong> Specifies the sequence of
+measurement time points (default is <code>NULL</code>).</li>
+<li><strong><code>d</code>:</strong> When using the <code>MP_MEM</code>
+method, this argument sets the number of measurement points involved
+(default is 3, which is also the minimum value).</li>
+<li><strong><code>family.W</code>:</strong> Specifies the distribution
+of <span class="math inline">\(W\)</span> given <span class="math inline">\(X\)</span>; available options are
+<code>&#39;gaussian&#39;</code> and <code>&#39;poisson&#39;</code>.</li>
+<li><strong><code>family.Y</code>:</strong> Describes the error
+distribution and link function for the response variable (see
+<code>stats::family</code> for details).</li>
+<li><strong><code>formula.Z</code>:</strong> Indicates which parts of
+<code>data.Z</code> to include in the model and whether to treat the
+scalar covariates as fixed or random effects.</li>
+<li><strong><code>basis.type</code>:</strong> Indicates the type of
+basis function for the expansion. Options include
+<code>&#39;Fourier&#39;</code>, <code>&#39;Bspline&#39;</code>, and <code>&#39;FPC&#39;</code>,
+corresponding to the Fourier basis, b-spline basis, and functional
+principal component basis, respectively.</li>
+<li><strong><code>basis.order</code>:</strong> Specifies the number of
+basis functions to use. For the Fourier basis (i.e., <span class="math inline">\(\frac{1}{2},\ \sin(kt),\ \cos(kt)\)</span> for
+<span class="math inline">\(k = 1, \dots, p_f\)</span>),
+<code>basis.order</code> equals <span class="math inline">\(p_f\)</span>. For the b-spline basis <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>,
+<code>basis.order</code> is set to <span class="math inline">\(k+p+1\)</span>. For the FPC basis,
+<code>basis.order</code> represents the number of functional principal
+components.</li>
+<li><strong><code>bs_degree</code>:</strong> Specifies the degree of the
+piecewise polynomials for the b-spline basis; this argument is only
+necessary when using the b-spline basis.</li>
+<li><strong><code>smooth</code>:</strong> Specifies whether to smooth
+the substitution for <span class="math inline">\(X\)</span> (default is
+<code>FALSE</code>).</li>
+<li><strong><code>silent</code>:</strong> Controls whether the function
+displays its progress during execution (default is
+<code>TRUE</code>).</li>
+</ul>
+<p>The function <code>ME.fcRegression_MEM</code> returns an object of
+class <code>fcRegression</code>.</p>
+<p>The package also provide a function, <code>MEM_X_hat</code>. This
+function can return the <span class="math inline">\(\hat X(t)\)</span>
+in this bias-correction method.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.1</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">ME.fcRegression_MEM</span>(<span class="at">data.Y =</span> MECfda.data.sim.<span class="fl">0.1</span><span class="sc">$</span>Y,</span>
 <span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>                          <span class="at">data.W =</span> MECfda.data.sim.<span class="fl">0.1</span><span class="sc">$</span>W,</span>
@@ -1148,62 +1333,96 @@ instrumental variable is used to estimate the covariance matrix
 associated with the measurement error. In the second stage, SIMEX is
 used to correct for measurement error in the function-valued
 covariate.</p>
-<p>The <strong>MECfda</strong> package provides a function
-<code>ME.fcQR_IV.SIMEX</code> for the application of their bias
-correction estimation method. The argument <code>data.Y</code> is the
-response variable. Input can be an atomic vector, a one-column matrix or
-data frame, recommended form is a one-column data frame with column
-name. The argument <code>data.W</code> is the data for <span class="math inline">\(W\)</span>, the measurement of <span class="math inline">\(X\)</span>, in the statistical model. The input
-should be a dataframe or matrix, in which each row represents a subject,
-each column represent a measurement (time) point. The argument
-<code>data.Z</code> is the data for scalar covariates, This argument can
-be input as no input or <code>NULL</code> when no scalar covariate is
-included in the model, an atomic vector when only one scalar covariate
-is included in the model, or as a matrix or data frame. The recommended
-form is a data frame with column names. The argument <code>data.M</code>
-is the data of <span class="math inline">\(M\)</span>, the instrumental
-variable. Input should be a dataframe or matrix, in which each row
-represents a subject. each column represent a measurement (time) point.
-The argument <code>tau</code> is the quantile <span class="math inline">\(\tau\in(0,1)\)</span>, default is 0.5. The
-argument <code>t_interval</code> specifies the domain of the
-function-valued covariate, which should be a 2-element vector,
-represents an interval. The default is <code>c(0,1)</code>, represent
-interval <span class="math inline">\([0,1]\)</span>. The argument
-<code>t_points</code> is the sequence of the measurement (time) points,
-default is <code>NULL</code>. The argument <code>formula.Z</code> is
-used to specify which part of the argument <code>Z</code> is used and
-how to treat the scalar-valued covariates. The argument
-<code>basis.type</code> indicates the type of basis function to be used
-in the basis expansion process. Available options are
-<code>&#39;Fourier&#39;</code> and <code>&#39;Bspline&#39;</code>, representing the
-Fourier basis and the b-spline basis, respectively. The argument
-<code>basis.order</code> indicates number of the function basis to be
-used. When using the Fourier basis <span class="math inline">\(\frac{1}{2},\sin k t, \cos k t, k =
-1,\dots,p_f\)</span>, <code>basis.order</code> is the number <span class="math inline">\(p_f\)</span>. When using the b-splines basis <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>,
-<code>basis.order</code> is the number of splines, equal to <span class="math inline">\(k+p+1\)</span>. The argument
-<code>bs_degree</code> specifies the degrees of piecewise polynomials of
-the b-spline basis function if using the b-splines basis. This argument
-is only needed when using b-spline basis.</p>
-<p>The function <code>ME.fcQR_IV.SIMEX</code> returns an
-ME.fcQR_IV.SIMEX class object as a list that containing the following
-elements.</p>
+<p>The <strong>MECfda</strong> package provides the function
+<code>ME.fcQR_IV.SIMEX</code> for applying its bias-correction
+estimation method in scalar-on-function quantile regression. The
+arguments are described as follows:</p>
+<ul>
+<li><p><strong><code>data.Y</code> (Response Variable):</strong><br />
+The response variable can be provided as an atomic vector, a one-column
+matrix, or a data frame. A one-column data frame with a column name is
+recommended for clarity.</p></li>
+<li><p><strong><code>data.W</code> (Measurement Data):</strong><br />
+This argument corresponds to <span class="math inline">\(W\)</span>, the
+observed measurement of <span class="math inline">\(X\)</span> in the
+statistical model. It should be provided as a data frame or matrix where
+each row represents a subject and each column corresponds to a
+measurement (time) point.</p></li>
+<li><p><strong><code>data.Z</code> (Scalar Covariates):</strong><br />
+The scalar covariate data can be omitted (or set to <code>NULL</code>)
+if no scalar covariates are included in the model. Alternatively, it can
+be provided as an atomic vector (for a single scalar covariate) or as a
+matrix/data frame (for multiple scalar covariates). A data frame with
+column names is recommended.</p></li>
+<li><p><strong><code>data.M</code> (Instrumental
+Variable):</strong><br />
+This argument provides the data for <span class="math inline">\(M\)</span>, the instrumental variable. It should
+be supplied as a data frame or matrix where each row represents a
+subject and each column corresponds to a measurement (time)
+point.</p></li>
+<li><p><strong><code>tau</code> (Quantile Level):</strong><br />
+Specifies the quantile level <span class="math inline">\(\tau \in
+(0,1)\)</span> for the quantile regression model. The default is
+0.5.</p></li>
+<li><p><strong><code>t_interval</code> (Domain of the Function-Valued
+Covariate):</strong><br />
+A two-element vector defining the interval over which the
+function-valued covariate is defined (default is <code>c(0,1)</code>,
+representing the interval <span class="math inline">\([0,1]\)</span>).</p></li>
+<li><p><strong><code>t_points</code> (Measurement Time
+Points):</strong><br />
+Specifies the sequence of time points at which measurements are taken.
+The default is <code>NULL</code>.</p></li>
+<li><p><strong><code>formula.Z</code> (Scalar Covariate
+Formula):</strong><br />
+This argument determines which components of <code>data.Z</code> are
+included in the model and how the scalar covariates are treated (i.e.,
+as fixed or random effects).</p></li>
+<li><p><strong><code>basis.type</code>:</strong> Indicates the type of
+basis function for the expansion. Options include
+<code>&#39;Fourier&#39;</code>, <code>&#39;Bspline&#39;</code>, and <code>&#39;FPC&#39;</code>,
+corresponding to the Fourier basis, b-spline basis, and functional
+principal component basis, respectively.</p></li>
+<li><p><strong><code>basis.order</code>:</strong> Specifies the number
+of basis functions to use. For the Fourier basis (i.e., <span class="math inline">\(\frac{1}{2},\ \sin(kt),\ \cos(kt)\)</span> for
+<span class="math inline">\(k = 1, \dots, p_f\)</span>),
+<code>basis.order</code> equals <span class="math inline">\(p_f\)</span>. For the b-spline basis <span class="math inline">\(\{B_{i,p}(x)\}_{i=-p}^{k}\)</span>,
+<code>basis.order</code> is set to <span class="math inline">\(k+p+1\)</span>. For the FPC basis,
+<code>basis.order</code> represents the number of functional principal
+components.</p></li>
+<li><p><strong><code>bs_degree</code>:</strong> Specifies the degree of
+the piecewise polynomials for the b-spline basis; this argument is only
+necessary when using the b-spline basis.</p></li>
+</ul>
+<p>The function <code>ME.fcQR_IV.SIMEX</code> returns an object of class
+<code>ME.fcQR_IV.SIMEX</code>, which is a list containing the following
+elements:</p>
 <ol style="list-style-type: decimal">
-<li>coef.X: A Fourier_series or bspline_series object representing the
-function-valued coefficient parameter of the function-valued
-covariate.</li>
-<li>coef.Z: The estimated linear coefficients of the scalar
-covariates.</li>
-<li>coef.all: Original estimate of linear coefficients.</li>
-<li>function.basis.type: Type of function basis used.</li>
-<li>basis.order: Same as in the input arguments.</li>
-<li>t_interval: A 2-element vector representing an interval, describes
-the domain of the function-valued covariate.</li>
-<li>t_points: Sequence of the measurement (time) points.</li>
-<li>formula: Regression model.</li>
-<li>formula.Z: Formula object containing only the scalar
-covariates.</li>
-<li>zlevels: Levels of the non-continuous scalar covariates.</li>
+<li><strong><code>coef.X</code>:</strong> A <code>Fourier_series</code>
+or <code>bspline_series</code> object representing the function-valued
+coefficient parameter of the function-valued covariate.</li>
+<li><strong><code>coef.Z</code>:</strong> The estimated linear
+coefficients of the scalar covariates.</li>
+<li><strong><code>coef.all</code>:</strong> The original estimate of the
+linear coefficients.</li>
+<li><strong><code>function.basis.type</code>:</strong> The type of
+function basis used.</li>
+<li><strong><code>basis.order</code>:</strong> The number of basis
+functions used (as specified in the input).</li>
+<li><strong><code>t_interval</code>:</strong> A two-element vector
+representing the interval, which defines the domain of the
+function-valued covariate.</li>
+<li><strong><code>t_points</code>:</strong> The sequence of measurement
+(time) points.</li>
+<li><strong><code>formula</code>:</strong> The regression model.</li>
+<li><strong><code>formula.Z</code>:</strong> A formula object containing
+only the scalar covariates.</li>
+<li><strong><code>zlevels</code>:</strong> The levels of any categorical
+(non-continuous) scalar covariates.</li>
 </ol>
+<p>This comprehensive structure ensures that users can flexibly input
+their data and clearly specify the modeling framework for
+bias-correction in scalar-on-function quantile regression.</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
 <span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.2</span>)</span>
 <span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">ME.fcQR_IV.SIMEX</span>(<span class="at">data.Y =</span> MECfda.data.sim.<span class="fl">0.2</span><span class="sc">$</span>Y,</span>
@@ -1255,43 +1474,71 @@ are obtained by optimizing the resulting corrected loss function. The
 resulting estimator of the regression parameters is shown to be
 consistent.</p>
 <p>The <strong>MECfda</strong> package provides a function,
-<code>ME.fcQR_CLS</code>, for the application of their bias correction
-estimation method. The argument <code>data.Y</code> is the response
-variable. Input can be an atomic vector, a one-column matrix or data
-frame, with the recommended form being a one-column data frame with
-column name. The argument <code>data.W</code> is the data for <span class="math inline">\(W\)</span>, the measurement of <span class="math inline">\(X\)</span>, in the statistical model. The input
-should be a 3-dimensional array, in which each row represents a subject,
-each column represent a measurement (time) point, each layer represents
-an observation. The argument <code>data.Z</code> is the data for scalar
-covariates, This argument can be no input or <code>NULL</code> when no
-scalar covariate is included in the model, as an atomic vector when only
-one scalar covariate is included in the model, or as a matrix or data
-frame. The recommended form is a data frame with column names. The
-argument <code>tau</code> is the quantile <span class="math inline">\(\tau\in(0,1)\)</span>, with the default value 0.5.
-The argument <code>t_interval</code> specifies the domain of the
-function-valued covariate, and should be a 2-element vector,
-representing an interval. The default is <code>c(0,1)</code>,
-representing interval <span class="math inline">\([0,1]\)</span>. The
-argument <code>t_points</code> is the sequence of measurement (time)
-points, default is <code>NULL</code>. The argument <code>grid_k</code>
-is an atomic vector, in which each element is a candidate basis
-number.<br />
-The argument <code>grid_h</code> is a non-zero-value atomic vector, in
-which each element is a candidate value for the tuning parameter. The
-argument <code>degree</code> is used in to compute the derivative and
-integral, and the default value is 45, which is large enough for most
-scenario. The argument <code>observed_X</code> is for estimating
-parametric variance, and the default value is <code>NULL</code>.</p>
-<p>The function returns an ME.fcQR_CLS class object. as a list that
-containing the following elements.</p>
+<code>ME.fcQR_CLS</code>, for implementing their bias-correction
+estimation method. Below is a description of its arguments and return
+values:</p>
+<ul>
+<li><p><strong><code>data.Y</code> (Response Variable):</strong><br />
+The response variable can be provided as an atomic vector, a one-column
+matrix, or a data frame. The recommended format is a one-column data
+frame with a column name.</p></li>
+<li><p><strong><code>data.W</code> (Measurement Data for <span class="math inline">\(W\)</span>):</strong><br />
+This argument represents <span class="math inline">\(W\)</span>, the
+observed measurement of <span class="math inline">\(X\)</span> in the
+statistical model. It should be provided as a three-dimensional array
+where each row corresponds to a subject, each column to a measurement
+(time) point, and each layer to an observation.</p></li>
+<li><p><strong><code>data.Z</code> (Scalar Covariates):</strong><br />
+Scalar covariates can be omitted (or set to <code>NULL</code>) if no
+scalar covariates are included in the model, provided as an atomic
+vector for a single scalar covariate, or as a matrix or data frame for
+multiple covariates. The recommended format is a data frame with column
+names.</p></li>
+<li><p><strong><code>tau</code> (Quantile Level):</strong><br />
+Specifies the quantile <span class="math inline">\(\tau \in
+(0,1)\)</span> to be used in the quantile regression model. The default
+value is 0.5.</p></li>
+<li><p><strong><code>t_interval</code> (Domain of the Function-Valued
+Covariate):</strong><br />
+A two-element vector that specifies the domain (interval) of the
+function-valued covariate. The default is <code>c(0,1)</code>,
+representing the interval <span class="math inline">\([0,1]\)</span>.</p></li>
+<li><p><strong><code>t_points</code> (Measurement Time
+Points):</strong><br />
+Specifies the sequence of measurement (time) points. The default is
+<code>NULL</code>.</p></li>
+<li><p><strong><code>grid_k</code> (Candidate Basis
+Numbers):</strong><br />
+An atomic vector where each element is a candidate number for the basis
+functions.</p></li>
+<li><p><strong><code>grid_h</code> (Candidate Tuning Parameter
+Values):</strong><br />
+A non-zero atomic vector where each element is a candidate value for the
+tuning parameter.</p></li>
+<li><p><strong><code>degree</code> (Degree for Derivative and Integral
+Calculations):</strong><br />
+This argument is used when computing derivatives and integrals, with a
+default value of 45—which is sufficient for most scenarios.</p></li>
+<li><p><strong><code>observed_X</code> (Observed <span class="math inline">\(X\)</span> Data for Variance
+Estimation):</strong><br />
+Used for estimating parametric variance; the default value is
+<code>NULL</code>.</p></li>
+</ul>
+<p>The function returns an object of class <code>ME.fcQR_CLS</code> (a
+list) containing the following elements:</p>
 <ol style="list-style-type: decimal">
-<li>estimated_beta_hat: Estimated coefficients from the corrected loss
-function (including the functional part)</li>
-<li>estimated_beta_t: Estimated functional curve</li>
-<li>SE_est: Estimated parametric variance. Returned only if observed_X
-is not <code>NULL</code>.</li>
-<li>estimated_Xbasis: The basis matrix used</li>
-<li>res_naive: Results of naive method</li>
+<li><strong><code>estimated_beta_hat</code>:</strong> Estimated
+coefficients from the corrected loss function (including the functional
+component).</li>
+<li><strong><code>estimated_beta_t</code>:</strong> The estimated
+functional curve.</li>
+<li><strong><code>SE_est</code>:</strong> The estimated parametric
+variance (returned only if <code>observed_X</code> is not
+<code>NULL</code>).</li>
+<li><strong><code>estimated_Xbasis</code>:</strong> The basis matrix
+used in the estimation.</li>
+<li><strong><code>res_naive</code>:</strong> Results from the naive
+(uncorrected) method.</li>
 </ol>
 <div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
 <span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.1</span>)</span>
@@ -1336,30 +1583,46 @@ variable. They included the following additional assumptions:</p>
 </ol>
 <p>for <span class="math inline">\(\forall t,s\in[0,1]\)</span> and
 <span class="math inline">\(i = 1,\dots,n\)</span>.</p>
-<p>The <strong>MECfda</strong> package provides a function
-<code>ME.fcLR_IV</code> for the application of their bias correction
-estimation method. The argument <code>data.Y</code> is the response
-variable, which can be input as an atomic vector, a one-column matrix or
-data frame, with the recommended form being a one-column data frame with
-column name. The argument <code>data.W</code> is the data for <span class="math inline">\(W\)</span>, the measurement of <span class="math inline">\(X\)</span>, in the statistical model. The input
-should be a dataframe or matrix, in which each row represents a subject.
-each column represent a measurement (time) point. The argument
-<code>data.M</code> is the data for <span class="math inline">\(M\)</span>, the instrumental variable. Input
-should be a dataframe or matrix. Each row represents a subject. Each
-column represent a measurement (time) point. The argument
-<code>t_interval</code> specifies the domain of the function-valued
-covariate, and should be a 2-element vector, represents an interval. The
-default value is <code>c(0,1)</code>, represent interval <span class="math inline">\([0,1]\)</span>. The argument <code>t_points</code>
-is the sequence of the measurement (time) points, and the default value
-is <code>NULL</code>. The argument <code>CI.bootstrap</code> specifies
-whether to return the confidence jinterval using the bootstrap method,
-and the default is FALSE.</p>
-<p>The function returns a ME.fcLR_IV class object as a list that
-containing the following elements.</p>
+<p>The <strong>MECfda</strong> package provides the function
+<code>ME.fcLR_IV</code> for implementing their bias-correction
+estimation method. The arguments are as follows:</p>
+<ul>
+<li><p><strong><code>data.Y</code> (Response Variable):</strong><br />
+The response variable can be provided as an atomic vector, a one-column
+matrix, or a data frame. The recommended format is a one-column data
+frame with a column name.</p></li>
+<li><p><strong><code>data.W</code> (Measurement Data for <span class="math inline">\(W\)</span>):</strong><br />
+This argument represents <span class="math inline">\(W\)</span>, the
+observed measurement of <span class="math inline">\(X\)</span> in the
+statistical model. It should be provided as a data frame or matrix,
+where each row represents a subject and each column corresponds to a
+measurement (time) point.</p></li>
+<li><p><strong><code>data.M</code> (Instrumental
+Variable):</strong><br />
+This argument provides the data for <span class="math inline">\(M\)</span>, the instrumental variable. It should
+be provided as a data frame or matrix, with each row representing a
+subject and each column representing a measurement (time)
+point.</p></li>
+<li><p><strong><code>t_interval</code> (Domain of the Function-Valued
+Covariate):</strong><br />
+A two-element vector that specifies the domain (interval) of the
+function-valued covariate. The default is <code>c(0,1)</code>,
+representing the interval <span class="math inline">\([0,1]\)</span>.</p></li>
+<li><p><strong><code>t_points</code> (Measurement Time
+Points):</strong><br />
+Specifies the sequence of measurement (time) points. The default is
+<code>NULL</code>.</p></li>
+<li><p><strong><code>CI.bootstrap</code> (Bootstrap Confidence
+Interval):</strong><br />
+A logical flag indicating whether to return a confidence interval using
+the bootstrap method. The default is <code>FALSE</code>.</p></li>
+</ul>
+<p>The function returns an object of class <code>ME.fcLR_IV</code>,
+which is a list containing the following elements:</p>
 <ol style="list-style-type: decimal">
-<li>beta_tW: Parameter estimates.</li>
-<li>CI: Confidence interval, returned only when CI.bootstrap is
-TRUE.</li>
+<li><strong><code>beta_tW</code>:</strong> Parameter estimates.</li>
+<li><strong><code>CI</code>:</strong> Confidence interval, which is
+returned only if <code>CI.bootstrap</code> is <code>TRUE</code>.</li>
 </ol>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
 <span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="fu">data</span>(MECfda.data.sim.<span class="fl">0.3</span>)</span>
@@ -1367,6 +1630,11 @@ TRUE.</li>
 <span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>                 <span class="at">data.W =</span> MECfda.data.sim.<span class="fl">0.3</span><span class="sc">$</span>W,</span>
 <span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>                 <span class="at">data.M =</span> MECfda.data.sim.<span class="fl">0.3</span><span class="sc">$</span>M)</span></code></pre></div>
 </div>
+</div>
+<div id="simulated-data-generation" class="section level1">
+<h1>Simulated Data Generation</h1>
+<p>The package <strong>MECfda</strong> includes some functions to
+generate simulated data to test the functions in the package.</p>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="unnumbered">References</h1>

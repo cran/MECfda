@@ -31,7 +31,7 @@ abstract: "Functional data analysis is a statistical approach used to analyze da
 keywords: "scalar-on-function regression, functional data, measurement error, function-valued
   covariates."
 vignette: > 
-  %\VignetteIndexEntry{Introduction to MECfda Package} 
+  %\VignetteIndexEntry{MECfda: An R package for bias correction due to measurement error in functional and scalar covariates in scalar-on-function regression models} 
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -66,7 +66,17 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Functional data analysis is commonly used 
+Functional data analysis (FDA) is an essential statistical approach for handling high-dimensional data that appear in the form of functions or images [@wang2016functional; @ramsay2002applied; @ramsay1991some]. In many applications, data are collected continuously or at frequent time intervals, resulting in complex functions over time. When the objective is to study the relationship between a scalar response and both functional and scalar covariates, scalar-on-function regression models become a natural choice.
+
+Although self-reported measures (e.g., dietary intake) are known to suffer from measurement error [@carroll2006measurement], recent studies have demonstrated that even device-based measurements (such as those from wearable devices) can be error prone [@crainiceanu2009generalized; @tekwe2019instrumental]. Failing to correct for measurement error in either scalar or function-valued covariates may lead to biased parameter estimates.
+
+The goal of the **MECfda** package is to provide solutions for a range of scalar-on-function regression models—including multi-level generalized scalar-on-function regression models and functional quantile regression models—while incorporating several bias-correction methods for measurement error in scalar-on-function regression problem.
+
+This package is developed in [R](https://www.R-project.org/).
+
+
+<!-- 
+Functional data analysis is commonly use
 to analyze high-dimensional data that appear as functions or images 
 [@wang2016functional] [@ramsay2002applied] [@ramsay1991some].
 Functional data analysis can be used to analyzed data collected 
@@ -84,10 +94,8 @@ It has been demonstrated that similar to scalar-valued covariates prone
 to measurement error, the failure to correct for biases due to measurement error 
 associated with functional data also leads to biased estimates
 
-
 We develop an 
 [R](https://www.R-project.org/)
-<!-- [\textsf{R}](https://www.R-project.org/)  -->
 package **MECfda**
 for solving scalar-on-function regression models including
 multi-level generalized scalar-on-function regression models 
@@ -95,6 +103,7 @@ and functional quantile linear regression models
 measurement error corrections using various bias reduction techniques 
 in these models.
 
+-->
 
 
 <!-- 
@@ -122,58 +131,64 @@ library(MECfda)
 # Scalar-on-Function Linear Regression Models
 
 <!-- The generic form  -->
-The general form 
-of scalar-on-function linear regression model is
+The general form of the scalar-on-function regression model is given by
 $$T(F_{Y_i|X_i,Z_i}) =  \sum_{l=1}^{L} \int_{\Omega_l} \beta_l(t) X_{li}(t) dt + (1,Z_i^T)\gamma$$
 where 
-$Y_i$ represents the scalar-valued response variable, 
-$X_{li}(t)$ represents the $l$-th function-valued covariate ($l=1,\dots,L$), 
-$\Omega_l$ is the domain of the $l$-th function-valued covariate,
-$\beta_l$ is a function-valued parameter, 
-$\beta_l$ and $X_{li}$ ($t\in\Omega_l$) are in $L^2(\Omega_l)$,
-$Z_i = (Z_{1i},\dots,Z_{qi})^T$ represents the scalar valued covariates,
-$\gamma = (\gamma_0,\gamma_1,\dots,\gamma_q)^T$ represents scalar-valued parameter,
-$F_{Y_i|X_i,Z_i}$ represents the cumulative distribution function 
-of $Y_i$ given $X_i$ and $Z_i$, and
-$T(\cdot)$ is a statistical functional. 
-A statistical functional is defined as a mapping from probability distribution 
-to real numbers. 
+
+- $Y_i$ is the scalar response variable;
+- $X_{li}(t)$ denotes the $l$th function-valued covariate defined on the domain $\Omega_l$;
+- $\beta_l(t)$ is the corresponding function-valued regression coefficient, and both $\beta_l$ and $X_{li}$ belong to $L^2(\Omega_l)$;
+- $Z_i = (Z_{1i}, \dots, Z_{qi})^T$ represents the scalar covariates;
+- $\gamma = (\gamma_0, \gamma_1, \dots, \gamma_q)^T$ is the parameter vector for the scalar covariates;
+- $F_{Y_i\mid X_i,Z_i}$ is the cumulative distribution function of $Y_i$ conditional on $X_i$ and $Z_i$;
+- $T(\cdot)$ is a statistical functional.
+
+A statistical functional is defined as a mapping from a probability distribution to a real number. 
 Statistical functionals represent quantiﬁable properties of probability distributions, 
-such as expectation and variance. 
-The following gives forms of the statistical functionals in the two types of
-scalar-on-function linear regression models 
-that can be solved using the algorithms included in **MECfda** package. 
+(e.g., an expectation, a variance or a quantile). 
 
-In multi-level generalized scalar-on-function generalized linear regression models,
-$$T(F_{Y_i|X_i,Z_i}) = g\left\{\int_\mathbb{R}ydF_{Y_i|X_i,Z_i}(y)\right\} = g(E[Y_i|X_i,Z_i]),$$ 
-where $g(\cdot)$ is a link function as in generalized linear model. 
-The only restriction of $g(\cdot)$ is that it should be strictly monotonic. 
 
-In scalar-on-function quantile linear regression models,
-$$T(F_{Y_i|X_i,Z_i}) = Q_{Y_i|X_i,Z_i}(\tau) = F_{Y_i|X_i,Z_i}^{-1}(\tau),$$ 
-where $F_{Y_i|X_i,Z_i}^{-1}(\cdot)$ is the inverse of $F_{Y_i|X_i,Z_i}(\cdot)$, $\tau\in(0,1)$. 
+
+Two common model types supported in this package are:
+
+1. **Multi-level Generalized Scalar-on-Function Regression:**  
+   This model is formulated as
+   $$
+   T\bigl(F_{Y_i\mid X_i,Z_i}\bigr) = g\Bigl\{E(Y_i\mid X_i,Z_i)\Bigr\} = g\left\{\int_\mathbb{R}ydF_{Y_i|X_i,Z_i}(y)\right\},
+   $$
+   where $g(\cdot)$ is a strictly monotonic link function analogous to that used in generalized linear models.
+
+2. **Scalar-on-Function Quantile Regression:**  
+   This model is expressed as
+   $$
+   T\bigl(F_{Y_i\mid X_i,Z_i}\bigr) = Q_{Y_i\mid X_i,Z_i}(\tau) = F_{Y_i\mid X_i,Z_i}^{-1}(\tau),
+   $$
+   where $\tau \in (0,1)$ denotes the quantile of interest.
+
+
+## Representation of Functional Data
+
+Function-valued variables (functional variables) are typically recorded as measurements at specific time points, resulting in an $n \times m$ data matrix $(x_{ij})$, where each row corresponds to an observation (subject) and each column to a measurement time.
 
 ## Functional Data
 
-Function-valued variables (functional variables) are usually recorded as the 
-value of the functions at certain (time) points in its domain. 
+Function-valued variables (functional variables) are typically recorded as the 
+measurements of the values of the functions at specific (time) points in the domain. 
 The data of a function-valued variable are often presented in the form of a matrix, 
 $(x_{ij})_{n\times m}$, 
 where $x_{ij} = f_i(t_j)$, represents the value of $f_i(t_j)$, 
-each row represents an observation (subject), and
-each column corresponds to a measurement (time) point.
+each row corresponds to an observation (subject) and each column to a measurement time.
 
-#### S4 class `functional_variable`
+### S4 Class `functional_variable`
 
-In the **MECfda** package, we have an s4 class, `functional_variable`,
-that represents the data of a function-valued variable in a matrix form. 
-The class has four slots. 
-The slot `X`, represents matrix $(x_{ij})_{n\times m}$.
-The slots `t_0` and `period` represent the left end and length of the
-domain of the function-valued variable, respectively.
-The slot `t_points` represents the (time) points that the functional variable is measured. 
-A method, `dim`, is provided to return the number of subjects
-and measurement (time) points for a `functional_variable` object. 
+In the **MECfda** package, the s4 class `functional_variable` represents function-valued data stored in matrix form. The main slots include:
+
+- **`X`**: The data matrix $(x_{ij})$;<!-- $(x_{ij})_{n\times m}$ -->
+- **`t_0`** and **`period`**: The left endpoint and length of the function’s domain, respectively (The class only support the domain in the format of interval);
+- **`t_points`**: A vector of the time points at which the measurements are recorded.
+
+A dedicated method, `dim`, returns the number of subjects and the number of measurement points for a `functional_variable` object.
+
 
 ```{r fd}
 fv = functional_variable(
@@ -187,70 +202,71 @@ dim(fv)
 
 ## Basis Expansion
 
-$\{\rho_{k}\}_{k=1}^\infty$ is a basis of $L^2(\Omega)$. 
-For an arbitrary function-valued parameter $\beta(\cdot)\in L^2(\Omega)$, 
-there exists a number sequence $\{c_{k}\}_{k=1}^\infty$ such that 
-$$\beta(t) = \sum_{k=1}^\infty c_{k}\rho_{k}(t)$$
-and for a function-valued variable, $X_i(t)$,
-$$\int_\Omega\beta(t) X_i(t) dt 
-= \int_\Omega X_i(t) \sum_{k=1}^\infty c_{k}\rho_{k}(t) dt
-= \sum_{k=1}^\infty c_{k} \int_\Omega \rho_{k}(t) X_i(t) dt
+Let $\{\rho_{k}\}_{k=1}^\infty$ be a complete basis for $L^2(\Omega)$. 
+For an arbitrary function $\beta(t) \in L^2(\Omega)$, there exists a sequence of (real) number $\{c_k\}$ such that
 $$
-We perform a truncation for the infinite basis sequence, then
-$$\int_\Omega\beta(t) X_i(t) dt \approx \sum_{k=1}^p c_{k} \int_\Omega X_i(t) \rho_{k}(t) dt$$
-where $p<\infty$. 
-For statistical models with parts in the form of 
-$\int_\Omega\beta(t) X_i(t) dt$,
-we use
-$c_{k} \int_\Omega X_i(t) \rho_{k}(t) dt$
-to approximate
-$\int_\Omega\beta(t) X_i(t) dt$
-and treat 
-$\int_{\Omega} \rho_{k}(t) X_{i}(t) dt$
-as the variable. 
-In practice, we usually choose the number of basis, $p$
-based on the sample size, $n$, 
+\beta(t) = \sum_{k=1}^\infty c_k \, \rho_k(t).
+$$
+
+For the function-valued variable $X_i(t)$, we have
+$$
+\int_\Omega \beta(t) X_i(t) \, dt = \int_\Omega X_i(t) \sum_{k=1}^\infty c_{k}\rho_{k}(t) dt = \sum_{k=1}^\infty c_k \int_\Omega \rho_k(t) X_i(t) \, dt.
+$$
+
+In practice, for $\int_\Omega\beta(t) X_i(t) dt$ in statistical models,
+we truncate the infinite series to $p$ terms ($p<\infty$),
+using $c_{k} \int_\Omega X_i(t) \rho_{k}(t) dt$
+to approximate $\int_\Omega\beta(t) X_i(t) dt$
+so that the problem reduces to estimating a finite number of parameters $c_1, \dots, c_p$, 
+and treating $\int_\Omega \rho_k(t) X_i(t) \, dt$ as new covariates.
+The number of basis, $p$, can be related to the sample size, $n$, 
 and the $p$ is in a form of $p(n)$. 
-The scalar-on-function linear model is converted to an ordinary scalar-on-scalar linear model,
-and the problem of estimating $\beta(t)$ is converted to estimating $c_k$, $k=1,\dots p$. 
+
 
 In practice, we may not necessarily use the truncated complete basis of $L^2$ function space. 
 Instead, we can just use a finite sequence of linearly independent functions as the basis function. 
+Common choices for the basis include the Fourier basis, b-spline basis, and eigenfunction basis.
 
-
-Performing basis expansion methods on function-valued variable data in matrix form as we mentioned
+In numerical computing level, 
+performing basis expansion methods on function-valued variable data in matrix form as we mentioned
 is to compute $(b_{ik})_{n\times p}$, 
 where $b_{ik} = \int_\Omega f(t)\rho_k(t) dt$.
 
-Usually the domain $\Omega$ of a function-valued variable $\{X(t),t\in\Omega\}$ is an interval. 
-The commonly used basis sequence types includes the Fourier basis, b-splines basis, and eigen function basis. 
+<!-- Usually the domain $\Omega$ of a function-valued variable $\{X(t),t\in\Omega\}$ is an interval.  -->
 
-### Fourier basis
 
-The Fourier basis of $L^2([t_0,t_0+T])$ consists of
-$$\frac{1}{2},\ \cos(\frac{2\pi}{T}k[x-t_0]),\ \sin (\frac{2\pi}{T}k[x-t_0])$$
-where $k = 1,\dots,\infty$.
+### Fourier Basis
 
-#### S4 class `Fourier_series`
+On the interval $[t_0, t_0+T]$, the Fourier basis consists of
 
-In the **MECfda** package, we have an s4 class, `Fourier_series` that represents
-the linear combination of Fourier basis functions
-$$\frac{a_0}{2} + \sum_{k=1}^{p_a} a_k \cos{(\frac{2\pi}{T}k(x-t_0))} + 
-\sum_{k=1}^{p_b} b_k \sin{(\frac{2\pi}{T}k(x-t_0))},\qquad x\in[t_0,t_0+T].$$
-The slot `double_constant` is the value of $a_0$. 
-The slot `cos` contains the coefficient value of $\cos$ waves, $a_k$. 
-The slot `sin` contains the coefficient value of $\sin$ waves, $b_k$. 
-The slot `k_cos` contains the values of $k$ that correspond to the coefficients of $\cos$ waves. 
-The slot `k_sin` contains the values of $k$ that correspond to the coefficients of $\sin$ waves. 
-The slot `t_0` is the left end of the domain interval $t_0$.
-The slot `period` is length of the domain interval $T$.
+$$
+\frac{1}{2}, \quad \cos\left(\frac{2\pi}{T}k(x-t_0)\right), \quad \sin\left(\frac{2\pi}{T}k(x-t_0)\right), \quad k = 1, 2, \dots
+$$
 
-The method `plot` for class `Fourier_series` is provided to 
-generate a visual representation of the summation function. 
-The method `FourierSeries2fun` is provided to compute the value of the summation function. 
+#### S4 Class `Fourier_series`
+
+In the **MECfda** package, s4 class `Fourier_series` represents a Fourier series of the form
+
+$$
+\frac{a_0}{2} + \sum_{k=1}^{p_a} a_k \cos\left(\frac{2\pi k (x-t_0)}{T}\right) + \sum_{k=1}^{p_b} b_k \sin\left(\frac{2\pi k (x-t_0)}{T}\right),\quad x \in [t_0, t_0+T].
+$$
+
+Its main slots include:
+
+- **`double_constant`**: The value of $a_0$;
+- **`cos`** and **`sin`**: The coefficients $a_k$ and $b_k$ for the cosine and sine terms, respectively;
+- **`k_cos`** and **`k_sin`**: The frequency values corresponding to the cosine and sine coefficients;
+- **`t_0`** and **`period`**: The left endpoint, $t_0$, and length, $T$, of the domain (interval $[t_0, t_0+T]$), respectively.
+
+Additional methods such as `plot`, `FourierSeries2fun`, and `extractCoef` are provided for visualization, function evaluation, and coefficient extraction.
+
+
+
+<!-- 
+The method `FourierSeries2fun` is provided to compute the value of the summation function.
 The argument `object`	should be an object of `Fourier_series` class.
 The argument `x` is the value of independent variable $x$. 
-The method `extractCoef` is provided to extract the Fourier coefficients of `Fourier_series` class object. 
+-->
 
 ```{r c1}
 fsc = Fourier_series(
@@ -270,55 +286,51 @@ extractCoef(fsc)
 The object `fsc` represents the summation
 $$\frac32 + \frac23 \cos(2\pi\cdot2x) + \sin(2\pi x) + \frac75\sin(2\pi\cdot2x).$$
 
-### B-splines basis
+### B-spline Basis
 
-A b-spline basis $\{B_{i,p}(x)\}_{i=-p}^{k}$ 
-on the interval $[t_0,t_{k+1}]$
-is defined as
-$$B_{i,0}(x) = \left\{
-    \begin{aligned}
-        &I_{(t_i,t_{i+1}]}(x), & i = 0,1,\dots,k\\
-        &0, &i<0\ or\ i>k
-    \end{aligned}
-\right.$$
-$$B_{i,r}(x) = \frac{x - t_{i}}{t_{i+r}-t_{i}} B_{i,r-1}(x) + \frac{t_{i+r+1} - x}
-{t_{i+r+1} - t_{i+1}}B_{i+1,r-1}(x)$$
-For all discontinuity points of $B_{i,r}$ ($r>0$) in the interval $(t_0,t_k)$, 
-let the value equals its limit, which means
-$$B_{i,r}(x) = \lim_{t\to x} B_{i,r}(t).$$
-The slot `Boundary.knots` is the boundary of the spline domain (start and end), 
-which is $t_0$ and $t_{k+1}$; 
-the default is $[0,1]$. 
-The slot `knots` represents the spline knots, which is $(t_1,\dots,t_k)$, 
-an equally spaced sequence is chosen by the function automatically 
-($t_j = t_0 + j\cdot\frac{t_{k+1}-t_0}{k+1}$)
-when not assigned. 
-The slot `intercept` is used to define whether an intercept is included in the basis; 
-the default value is TRUE, and must be TRUE.
-The slot `df` is the degrees of freedom of the basis, which is the number of the splines, 
-equal to $p+k+1$. 
-By default $k =0$ and $\text{df} = p+1$.
-The slot `degree` is the degree of the splines, 
-which is the degree of piecewise polynomials, $p$;
-the default value is 3. See degree in bs.
+A b-spline basis $\{B_{i,p}(x)\}_{i=-p}^{k}$ on the interval $[t_0, t_{k+1}]$ is defined recursively as follows:
+- For $p = 0$,
+  $$
+  B_{i,0}(x) = \begin{cases}
+    I_{(t_i, t_{i+1}]}(x), & i = 0, 1, \dots, k, \\
+    0, & \text{otherwise}.
+  \end{cases}
+  $$
+- For $p > 0$, the recursion is given by
+  $$
+  B_{i,p}(x) = \frac{x-t_i}{t_{i+p}-t_i} B_{i,p-1}(x) + \frac{t_{i+p+1}-x}{t_{i+p+1}-t_{i+1}} B_{i+1,p-1}(x).
+  $$
+  
+At discontinuities in the interval $(t_0,t_k)$, 
+the basis function is defined as its limit, $B_{i,p}(x) = \lim_{t\to x} B_{i,p}(t)$, to ensure continuity.
 
+#### S4 Classes `bspline_basis` and `bspline_series`
 
-#### S4 class `bspline_basis` and `bspline_series`
+The s4 class `bspline_basis` represents a b-spline basis, $\{B_{i,p}(x)\}_{i=-p}^{k}$, on the interval $[t_0, t_{k+1}]$. Its key slots include:
 
-In the **MECfda** package, we have an s4 class, `bspline_basis` that represents
-a b-spline basis, $\{B_{i,p}(x)\}_{i=-p}^{k}$, on the interval $[t_0,t_{k+1}]$. 
-We also have an s4 class, `bspline_series`, that represents
-the summation $\sum_{i=0}^{k}b_i B_{i,p}(x)$. 
-The slot `coef` contains the b-spline coefficients, $b_i$. ($i = 0,\dots,k$)
-The slot `bspline_basis` is a `bspline_basis` object, that represents the b-spline basis used, 
-$\{B_{i,p}(x)\}_{i=-p}^{k}$.
+- **`Boundary.knots`**: The boundary $[t_0, t_{k+1}]$, (default is $[0,1]$);
+- **`knots`**: The internal spline knots, $(t_1,\dots,t_k)$, (automatically generated as equally spaced, $t_j = t_0 + j\cdot\frac{t_{k+1}-t_0}{k+1}$, if not assigned);
+- **`intercept`**: Indicates whether an intercept is included (default is `TRUE`);
+- **`df`**: Degrees of freedom of the basis, which is the number of the splines, equal to $p + k + 1$ (by default $k =0$ and $\text{df} = p+1$);
+- **`degree`**: The degree of the spline, which is the degree of piecewise polynomials, $p$, (default is 3).
+
+The s4 class `bspline_series` represents the linear combination
+
+$$
+\sum_{i=0}^{k} b_i B_{i,p}(x),
+$$
+
+where the slot **`coef`** stores the coefficients $b_i$ ($i = 0,\dots,k$) and **`bspline_basis`** specifies the associated basis (represented by a `bspline_basis` object).
 
 
-The method `plot` for class `bspline_basis` is provided to 
-generate a visual representation of the summation function. 
+Methods such as `plot` and `bsplineSeries2fun` are provided for visualization and function evaluation.
+
+
+<!-- 
 The method `bsplineSeries2fun` is provided to compute the value of the summation function. 
 The argument `object`	should be an object of the `bspline_series` class.
-The argument `x` is the value of the independent variable $x$. 
+The argument `x` is the value of the independent variable $x$.
+-->
 
 ```{r c2}
 bsb = bspline_basis(
@@ -341,17 +353,6 @@ $$2B_{i,-3}(x)+B_{i,-2}(x)+\frac34B_{i,-1}(x)+\frac23B_{i,0}(x) + \frac78B_{i,1}
 \frac52B_{i,2}(x) +\frac{19}{10}B_{i,3}(x),$$
 where $x\in[t_0,t_4]$ and $t_0=0$, $t_k = t_{k-1}+6$ ,$k=1,2,3,4$. 
 
-#### basis2fun
-
-A generic function, `basis2fun`, is provided for the 
-class `Fourier_series` and `bspline_series`. 
-When applied to a `Fourier_series` object, it is equivalent to method `FourierSeries2fun`.
-When applied to a `bspline_series` object, it is equivalent to method `bsplineSeries2fun`.
-
-```{r basis2fun}
-basis2fun(fsc,seq(0,1,0.05))
-basis2fun(bss,seq(0,24,0.5))
-```
 
 ### Eigenfunction basis
 
@@ -359,24 +360,70 @@ Suppose $K(s,t)\in L^2(\Omega\times \Omega)$,
 $f(t)\in L^2(\Omega)$. 
 Then $K$ induces an linear operator $\mathcal{K}$ by 
 $$(\mathcal{K}f)(x) = \int_{\Omega} K(t,x)f(t)dt$$
-If $\xi(\cdot)\in L^2(\Omega)$ such that 
+If $\xi \in L^2(\Omega)$ such that 
 $$\mathcal{K}\xi = \lambda \xi$$
-where $\lambda\in C$,
+where $\lambda\in \mathbb{C}$,
 we call $\xi$ an eigenfunction/eigenvector of 
 $\mathcal{K}$, and $\lambda$ an eigenvalue associated with $\xi$. 
 
-All the eigenfunctions of $\mathcal{K}$ make a basis of $L^2(\Omega)$. 
-We call the basis induced by 
-$$K(s,t)=\text{Cov}(X(t),X(s))$$
-a functional principal component (FPC) basis,
-where $\{X(t),t\in\Omega\}$ is a stochastic process.
+For a stochastic process $\{X(t),t\in\Omega\}$
+we call the orthogonal basis, $\{\xi_k\}_{k=1}^\infty$
+corresponding to eigenvalues $\{\lambda_k\}_{k=1}^\infty$ ($\lambda_1\geq\lambda_2\geq\dots$), 
+induced by 
+$$K(s,t)=\operatorname{Cov}(X(t),X(s))$$
+a functional principal component (FPC) basis for $L^2(\Omega)$.
+
+The eigenfunction basis relies on the covariance function $K(s,t)$. 
+And we usually cannot analytically express the equation of the basis funcitons
+in eigenfunction basis. 
+In practice, the covariance function is estimated from the data and the eigenfunctions are computed numerically.
+
+
+### Numerical Basis
+
+Sometimes, analytical expressions for the basis functions are not available. 
+In these cases, they can be represented numerically. 
+Let $\{\rho_k\}_{k=1}^\infty$ denote a basis of the function space. 
+We can numerically approximate the basis by storing the values of a finite subset of these functions at a finite set of points in the domain, i.e., $\rho_k(t_j)$ for $k=1,\dots,p$ and $j=1,\dots,m$.
+
+#### S4 Class `numeric_basis` and `numericBasis_series`
+
+In this package, the s4 class `numeric_basis` is designed to represent a finite sequence of functions $\{\rho_k\}_{k=1}^p$ by their values at a finite set of points within their domain. In this context, all functions share the same domain, which is assumed to be an interval. 
+The key slots include:
+
+
+- **`basis_function`**: The matrix $(\zeta_{jk})_{m \times p}$, where each element is defined as $\zeta_{jk} = \rho_k(t_j)$ for $j = 1, \dots, m$ and $k = 1, \dots, p$. In this matrix, each row corresponds to a point in the domain, and each column corresponds to a specific basis function.
+- **`t_points`**: A numeric vector that represents the points in the domain at which the basis functions are evaluated. The $j$-th element of this vector corresponds to the $j$-th row of the `basis_function` matrix.
+- **`t_0`** and **`period`**: The left endpoint and length of the domain, respectively.
+
+Additionally, the package provides an s4 class `numericBasis_series`, which represents a linear combination of the basis functions represented by a `numeric_basis` object. 
+The key slots include:
+
+- **`coef`**: The linear coefficients for the summation series.
+- **`numeric_basis`**: Function basis as represented by a `numeric_basis` object.
+
+
+
+#### Function `basis2fun`
+
+The generic function `basis2fun` is provided for `Fourier_series`, `bspline_series`, and `numericBasis_series` objects. 
+For a `Fourier_series`      object, it is equivalent to `FourierSeries2fun`; 
+for a `bspline_series`      object, it is equivalent to `bsplineSeries2fun`;
+For a `numericBasis_series` object, it is equivalent to `numericBasisSeries2fun`.
+
+
+```{r basis2fun}
+basis2fun(fsc,seq(0,1,0.05))
+basis2fun(bss,seq(0,24,0.5))
+```
 
 ### Basis expansion methods for the `functional_variable` class
 
 The **MECfda** pakcage provide the methods
-`fourier_basis_expansion` and `bspline_basis_expansion` for the
-class `functional_variable`,
-which perform basis expansion using Fourier basis and b-spline basis respectively.
+`fourier_basis_expansion`, `bspline_basis_expansion`, `FPC_basis_expansion`, and `numeric_basis_expansion`
+for the class `functional_variable`,
+which perform basis expansion using Fourier basis, b-spline basis, functional principal component basis,
+and numerical basis respectively.
 
 ```{r be}
 data(MECfda.data.sim.0.0)
@@ -387,12 +434,18 @@ BE.bs = bspline_basis_expansion(fv,5L,3L)
 
 ## Numerical Computation of Integrals
 
-We use
-$$\frac{1}{|T|}\sum_{t\in T} \rho_{k}(t) X_{i}(t)$$
-to compute the integral
-$$\int_{\Omega} \rho_{k}(t) X_{i}(t) dt$$
-where $T$ is the measurement (time) points of $X_{i}(t)$, and
+The package approximates the integral
+
+$$
+\int_{\Omega} \rho_{k}(t) X_{i}(t) \, dt \approx \frac{\mu(\Omega)}{|T|} \sum_{t \in T} \rho_{k}(t) X_{i}(t),
+$$
+
+where $\mu(\cdot)$ denote the Lebesgue measure. 
+$T$ denotes the set of measurement time points for $X_i(t)$ and 
 $|T|$ represents the cardinal number of $T$. 
+
+
+
 
 # Scalar-on-Function Linear Regression in **MECfda**
 
@@ -404,73 +457,42 @@ fcRegression(Y, FC, Z, formula.Z, family = gaussian(link = "identity"),
              bs_degree = 3)
 ```
 
-The **MECfda** package provides a function, `fcRegression`, to fit 
-generalized linear mixed effect models,
-including ordinary linear models, and
-generalized linear models with fixed and random effects,
-using basis expansion to discretize the function-valued covariates. 
-The function `fcRegression` can solve a linear model in the following form:
-$$g(E(Y_i|X_i,Z_i)) = \sum_{l=1}^{L} 
-\int_{\Omega_l} \beta_l(t) X_{li}(t) dt + (1,Z_i^T)\gamma.$$
-The function can allow one or multiple function-valued covariates 
-to be used as fixed effects,
-and zero, one, or multiple scalar-valued covariates to be used 
-as fixed or random effects.
-Response variable, function-valued covariates, and scalar-valued covariates 
-are input separately as three different arguments, `Y`, `FC`, and `Z`, respectively. 
-The format of the input data can be very flexible. 
-For response variable, the input format can be an atomic vector, 
-a one-column matrix or data frame. 
-The recommended form is a one-column data frame or matrix with a column name,
-because in this case, the name of response variable is specified. 
-For function-valued covariates, 
-a `functional_variable` object or a matrix or a data frame or a list of these objects
-can be accepted as input data.
-When one `functional_variable` object, matrix or, data frame is input as argument `FC`, 
-only one function-valued covariate is included in the model. 
-When a list of these objects is input as argument `FC`, 
-the model can have multiple function-valued covariates,
-with each element of the list corresponding to a different function-valued covariate. 
-For of scalar-valued covariates, 
-a matrix, data frame, atomic vector, `NULL`, or, no input can be accepted as input data. 
-When argument `Z` is not assigned, 
-no scalar-valued covariate is included in the model and argument `formula.Z` 
-should also be `NULL`, or no input. 
-When an atomic vector is input as argument `Z`, 
-only one scalar-valued is included in the model, 
-and, the name of the scalar-valued covariate is not specified. 
-So even if only one scalar-valued covariate is included in the model, 
-a matrix or data frame with column name is recommended as the input for argument `Z`. 
-The argument `formula.Z` is used to specify which part of the argument `Z` is used
-and whether to treat scalar-valued covariates as fixed effects or random effects. 
-The argument `family` can specify the distribution type of the response variable and link function 
-to be used in the regression. 
-The argument `basis.type` indicate the type of basis function to be used in basis expansion process.
-Available options are 'Fourier' and 'Bspline', 
-representing the Fourier basis and the b-spline basis, respectively.
-The argument `basis.order` indicates the number of function basis to be used. 
-When using the Fourier basis $\frac{1}{2},\sin k t, \cos k t, k = 1,\dots,p_f$, 
-`basis.order` is the number $p_f$.
-When using the b-splines basis $\{B_{i,p}(x)\}_{i=-p}^{k}$,
-`basis.order` is the number of splines, equal to $k+p+1$.
-The argument `bs_degree` specifies the degree of the piecewise polynomials of
-the b-spline basis function if using the b-splines basis,
-and is only needed when using the b-spline basis. 
 
-The function `fcRegression` returns an object of s3 class `fcRegression`. 
-as a list that containing the following elements. 
+The **MECfda** package provides a function, `fcRegression`, for fitting generalized linear mixed-effect models—including ordinary linear models and generalized linear models with fixed and random effects—by discretizing function-valued covariates using basis expansion. The function can solve a linear model of the form
 
-1. regression_result: Result of the regression.
-2. FC.BasisCoefficient: A list of Fourier_series or bspline_series objects, 
-representing the function-valued linear coefficients of the function-valued covariates.
-3. function.basis.type: Type of function basis used.
-4. basis.order: Same as in the arguments.
-5. data: Original data.
-6. bs_degree: Degree of splines, returned only if the b-splines basis is used.
+$$
+g\bigl(E(Y_i\mid X_i,Z_i)\bigr) = \sum_{l=1}^{L} \int_{\Omega_l} \beta_l(t) X_{li}(t) \, dt + (1,Z_i^T)\gamma.
+$$
 
-We can use the method `predict` to get a predicted value from the model.
-We can use the method `fc.beta` to get the values of function-valued linear coefficient 
-parameters, $\beta_l(t)$. 
+It supports one or multiple function-valued covariates as fixed effects, and zero, one, or multiple scalar covariates, which can be specified as either fixed or random effects. The response variable, function-valued covariates, and scalar covariates are supplied separately via the arguments `Y`, `FC`, and `Z`, respectively, allowing great flexibility in data format. 
+
+- **Response Variable:**  
+  The response can be provided as an atomic vector, a one-column matrix, or a data frame. However, a one-column data frame or matrix with a column name is recommended so that the response variable's name is clearly specified.
+
+- **Function-Valued Covariates:**  
+  The function-valued covariates can be input as a `functional_variable` object, a matrix, a data frame, or a list of these objects. If a single `functional_variable` object (or matrix or data frame) is provided via `FC`, the model includes one function-valued covariate. If a list is provided, the model accommodates multiple function-valued covariates, with each element in the list representing a distinct covariate.
+
+- **Scalar Covariates:**  
+  Scalar covariates can be provided as a matrix, data frame, atomic vector, or even `NULL` if no scalar covariates are present. If `Z` is omitted or set to `NULL`, no scalar covariate is included and the argument `formula.Z` should also be `NULL` or omitted. When an atomic vector is used for `Z`, it represents a single scalar covariate (without a name). Hence, even when only one scalar covariate is included, it is recommended to supply it as a matrix or data frame with a column name. The `formula.Z` argument specifies which parts of `Z` to use and whether scalar covariates should be treated as fixed or random effects.
+
+Other key arguments include:
+
+- **`family`:** Specifies the response variable's distribution and the link function to be used.
+- **`basis.type`:** Indicates the type of basis function for the expansion. Options include `'Fourier'`, `'Bspline'`, and `'FPC'`, corresponding to the Fourier basis, b-spline basis, and functional principal component basis, respectively.
+- **`basis.order`:** Specifies the number of basis functions to use. For the Fourier basis (i.e., $\frac{1}{2},\ \sin(kt),\ \cos(kt)$ for $k = 1, \dots, p_f$), `basis.order` equals $p_f$. For the b-spline basis $\{B_{i,p}(x)\}_{i=-p}^{k}$, `basis.order` is set to $k+p+1$. For the FPC basis, `basis.order` represents the number of functional principal components.
+- **`bs_degree`:** Specifies the degree of the piecewise polynomials for the b-spline basis; this argument is only necessary when using the b-spline basis.
+
+The function returns an s3 object of class `fcRegression`, which is a list containing the following elements:
+
+1. **regression_result:** The result of the regression analysis.
+2. **FC.BasisCoefficient:** A list of `Fourier_series`, `bspline_series`, or `numericBasis_series` objects representing the function-valued linear coefficients of the covariates.
+3. **function.basis.type:** The type of basis used.
+4. **basis.order:** The number of basis functions used, as specified in the input.
+5. **data:** The original data provided to the model.
+6. **bs_degree:** The degree of the b-spline basis, same as specified in the input (included only when the b-spline basis is used).
+
+Additionally, the `predict` method can be used to obtain predicted values from the fitted model, and the `fc.beta` method is available to evaluate the estimated function-valued coefficient parameters $\beta_l(t)$.
+
 
 ```{r fcglmm}
 data(MECfda.data.sim.0.0)
@@ -495,37 +517,23 @@ fcQR(Y, FC, Z, formula.Z, tau = 0.5, basis.type = c("Fourier", "Bspline"),
      basis.order = 6L, bs_degree = 3)
 ```
 
-The **MECfda** package provides a function, `fcQR`, for fitting
-quantile linear regression models.
-The method for addressing function-valued covariates is 
-discretization using basis expansion. 
-The function `fcQR` can solve a linear model in the following form:
+The **MECfda** package provides a function, `fcRegression`, for fitting quantile linear regression models by discretizing function-valued covariates using basis expansion. The function can solve a linear model of the form
+
 $$Q_{Y_i|X_i,Z_i}(\tau) = \sum_{l=1}^L\int_{\Omega_l} \beta_l(\tau,t) X_{li}(t) dt +  (1,Z_i^T)\gamma.$$
-The function allows one or multiple function-valued covariates,
-and zero, one, or multiple scalar-valued covariates.
-Data input occurs as described for the function `fcRegression`.
-The treatment of the scalar-valued covariates is specified by 
-the argument `formula.Z`, similar to the function `fcRegression`. 
-The only difference between function fcQR and function fcRegression is that 
-the quantile linear regression model does not include a random effect. 
-The quantile $\tau$ is specified by the argument `tau`. 
-The type and parameters of the basis function are specified bythe
-argument `basis.type`, `basis.order`, and `bs_degree`, as described for the function `fcRegression`. 
+The function supports one or multiple function-valued covariates, as well as zero, one, or multiple scalar-valued covariates. Data input follows the same guidelines as for the `fcRegression` function, and the treatment of scalar covariates is determined by the `formula.Z` argument. The primary difference between `fcQR` and `fcRegression` is that the quantile linear regression model does not incorporate random effects. The quantile $\tau$ is specified by the argument `tau`, and the type and parameters of the basis functions are defined by the `basis.type`, `basis.order`, and `bs_degree` arguments, just as in `fcRegression`.
 
-The function `fcQR` returns an object of s3 class `fcQR`, 
-as a list that contains containing the following elements.
 
-1. regression_result: Result of the regression.
-2. FC.BasisCoefficient: A list of Fourier_series or bspline_series objects, 
-representing the function-valued linear coefficients of the function-valued covariates.
-3. function.basis.type: Type of function basis used.
-4. basis.order: Same as in the arguments.
-5. data: Original data.
-6. bs_degree: Degree of the splines, returned only if the b-splines basis is used.
+The function returns an s3 object of class `fcQR`, which is a list containing the following elements:
 
-We can use the method `predict` to obtain a predicted value from the model
-and use the method `fc.beta` to obtain the values of function-valued linear coefficient 
-parameters $\beta_l(t)$. 
+1. **regression_result:** The result of the regression analysis.
+2. **FC.BasisCoefficient:** A list of `Fourier_series`, `bspline_series`, or `numericBasis_series` objects representing the function-valued linear coefficients of the covariates.
+3. **function.basis.type:** The type of basis used.
+4. **basis.order:** The number of basis functions used, as specified in the input.
+5. **data:** The original data provided to the model.
+6. **bs_degree:** The degree of the b-spline basis, same as specified in the input (included only when the b-spline basis is used).
+
+
+Additionally, the `predict` method can be used to obtain predicted values from the fitted model, and the `fc.beta` method is available to evaluate the estimated function-valued coefficient parameters $\beta_l(t)$.
 
 ```{r fcqr}
 data(MECfda.data.sim.0.0)
@@ -545,7 +553,7 @@ predict(object = res, newData.FC = MECfda.data.sim.1.0$FC,
 
 # Measurement Error Models and Bias Correction Estimation Methods
 
-Data collected in real- world settings often include measurement error, 
+Data collected in real-world settings often include measurement error, 
 especially function-valued data. 
 Measurement error in a data set may result in estimation bias. 
 The *MECfda** package also provides bias correction estimation method functions for
@@ -643,58 +651,55 @@ estimation procedures to avoid potential computational complexities caused
 by analyses of multi-level functional data and 
 computations of potentially intractable and complex integrals. 
 
-The **MECfda** package provides a function `ME.fcRegression_MEM` 
-for application to the bias correction estimation method. 
-The response variable, function-valued covariates, and scalar-valued covariates 
-are input separately as three different arguments. 
-The argument `data.Y`	is the response variable. 
-Inputs can be an atomic vector, a one-column matrix or data frame, 
-recommended form is a one-column data frame with column name. 
-The argument `data.W` is the data for $W$, 
-the measurement of $X$, in the statistical model. 
-The input should be a 3-dimensional array. 
-in which each row represents a subject,
-each column represent a measurement (time) point,
-each layer represents an observation.
-The argument `data.Z` is the data for the scalar covariates, 
-It can be no input or `NULL` if the model does not include a scalar covariate, 
-input in the form of an atomic vector when the model includes only one scalar covariate, 
-or input as a matrix or data frame, 
-with the recommended form being a data frame with column names. 
-The argument `method` specifies the method for constructing the substitution $X$. 
-Available options includes `'UP_MEM'`, `'MP_MEM'`, and `'average'`. 
-The argument `t_interval`	specifies the domain of the function-valued covariate 
-and should be a 2-element vector, representing an interval. 
-The default is `c(0,1)`, represent interval $[0,1]$.
-The argument `t_points`	is the sequence of measurement (time) points, 
-and the default is `NULL`.
-The argument `d` is the number of measurement (time) points involved for `MP_MEM` 
-(the default value is 3, which is also the minimum value).
-The argument `family.W`	is the distribution of $W$ given $X$, and 
-available options are `'gaussian'` and `'poisson'`. 
-The argument `family.Y`	is a description of the error distribution 
-and link function to be used in the model. See `stats::family`. 
-The argument `formula.Z` is used to specify which part of the argument `Z` is used
-and whether to treat the scalar-valued covariates, 
-as fixed effects or random effects. 
-The argument `basis.type` indicates the type of basis function to be used 
-in the basis expansion process.
-Available options are `'Fourier'` and `'Bspline'`, 
-representing Fourier basis and b-spline basis respectively.
-The argument `basis.order` indicates number of the function basis to be used. 
-When using Fourier basis $\frac{1}{2},\sin k t, \cos k t, k = 1,\dots,p_f$, 
-`basis.order` is the number $p_f$.
-When using b-splines basis, $\{B_{i,p}(x)\}_{i=-p}^{k}$,
-`basis.order` is the number of splines, equal to $k+p+1$.
-The argument `bs_degree` specifies the degree of the piecewise polynomials of b-spline basis function
-if use b-splines basis.
-This argument is need only when using b-spline basis. 
-The argument `smooth`	specifies whether to smooth the substitution of $X$, 
-and the default is FALSE.
-The argument `silent`	specifies whether not to show the statuse of the running of the function, 
-and the default is TRUE.
 
-The function ME.fcRegression_MEM returns a fcRegression object.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The **MECfda** package provides the function `ME.fcRegression_MEM` for applying bias-correction estimation methods. In this function, the response variable, function-valued covariates, and scalar covariates are supplied separately via the arguments `data.Y`, `data.W`, and `data.Z`, respectively.
+
+- **`data.Y` (Response Variable):**  
+  The response variable can be provided as an atomic vector, a one-column matrix, or a data frame. However, a one-column data frame with a column name is recommended so that the response variable is explicitly identified.
+
+- **`data.W` (Measurement Data):**  
+  This argument represents $W$, the observed measurement of the true function-valued covariate $X$ in the statistical model. It should be provided as a three-dimensional array where each row corresponds to a subject, each column to a measurement (time) point, and each layer to a separate observation.
+
+- **`data.Z` (Scalar Covariates):**  
+  The scalar covariates can be input as a matrix, data frame, or atomic vector. If the model does not include any scalar covariates, `data.Z` can be omitted or set to `NULL`. For a single scalar covariate, although an atomic vector is acceptable, a data frame or matrix with a column name is recommended. For multiple scalar covariates, use a matrix or data frame with named columns.
+
+Other key arguments include:
+
+- **`method`:** Specifies the method for constructing the substitute for $X$; available options are `'UP_MEM'`, `'MP_MEM'`, and `'average'`.
+- **`t_interval`:** Defines the domain of the function-valued covariate as a two-element vector (default is `c(0,1)`, representing the interval $[0,1]$).
+- **`t_points`:** Specifies the sequence of measurement time points (default is `NULL`).
+- **`d`:** When using the `MP_MEM` method, this argument sets the number of measurement points involved (default is 3, which is also the minimum value).
+- **`family.W`:** Specifies the distribution of $W$ given $X$; available options are `'gaussian'` and `'poisson'`.
+- **`family.Y`:** Describes the error distribution and link function for the response variable (see `stats::family` for details).
+- **`formula.Z`:** Indicates which parts of `data.Z` to include in the model and whether to treat the scalar covariates as fixed or random effects.
+- **`basis.type`:** Indicates the type of basis function for the expansion. Options include `'Fourier'`, `'Bspline'`, and `'FPC'`, corresponding to the Fourier basis, b-spline basis, and functional principal component basis, respectively.
+- **`basis.order`:** Specifies the number of basis functions to use. For the Fourier basis (i.e., $\frac{1}{2},\ \sin(kt),\ \cos(kt)$ for $k = 1, \dots, p_f$), `basis.order` equals $p_f$. For the b-spline basis $\{B_{i,p}(x)\}_{i=-p}^{k}$, `basis.order` is set to $k+p+1$. For the FPC basis, `basis.order` represents the number of functional principal components.
+- **`bs_degree`:** Specifies the degree of the piecewise polynomials for the b-spline basis; this argument is only necessary when using the b-spline basis.
+- **`smooth`:** Specifies whether to smooth the substitution for $X$ (default is `FALSE`).
+- **`silent`:** Controls whether the function displays its progress during execution (default is `TRUE`).
+
+The function `ME.fcRegression_MEM` returns an object of class `fcRegression`.
+
+The package also provide a function, `MEM_X_hat`. 
+This function can return the $\hat X(t)$ in this bias-correction method. 
+
 
 ```{r MEM, eval = FALSE}
 data(MECfda.data.sim.0.1)
@@ -777,58 +782,69 @@ an instrumental variable is used to estimate the covariance matrix associated wi
 In the second stage, 
 SIMEX is used to correct for measurement error in the function-valued covariate.
 
-The **MECfda** package provides a function `ME.fcQR_IV.SIMEX` 
-for the application of their bias correction estimation method. 
-The argument `data.Y`	is the response variable. 
-Input can be an atomic vector, a one-column matrix or data frame, 
-recommended form is a one-column data frame with column name. 
-The argument `data.W` is the data for $W$, the measurement of $X$, in the statistical model. 
-The input should be a dataframe or matrix, in which 
-each row represents a subject, 
-each column represent a measurement (time) point. 
-The argument `data.Z` is the data for scalar covariates, 
-This argument can be input as no input or `NULL` when no scalar covariate is included in the model, 
-an atomic vector when only one scalar covariate is included in the model, 
-or as a matrix or data frame.
-The recommended form is a data frame with column names. 
-The argument `data.M` is the data of $M$,
-the instrumental variable. 
-Input should be a dataframe or matrix, in which
-each row represents a subject. 
-each column represent a measurement (time) point.
-The argument `tau` is the quantile $\tau\in(0,1)$, default is 0.5.
-The argument `t_interval`	specifies the domain of the function-valued covariate, 
-which should be a 2-element vector, represents an interval. 
-The default is `c(0,1)`, represent interval $[0,1]$.
-The argument `t_points`	is the sequence of the measurement (time) points, 
-default is `NULL`.
-The argument `formula.Z` is used to specify which part of the argument `Z` is used
-and how to treat the scalar-valued covariates. 
-The argument `basis.type` indicates the type of basis function to be used in the basis expansion process.
-Available options are `'Fourier'` and `'Bspline'`, 
-representing the Fourier basis and the b-spline basis, respectively.
-The argument `basis.order` indicates number of the function basis to be used. 
-When using the Fourier basis $\frac{1}{2},\sin k t, \cos k t, k = 1,\dots,p_f$, 
-`basis.order` is the number $p_f$.
-When using the b-splines basis $\{B_{i,p}(x)\}_{i=-p}^{k}$,
-`basis.order` is the number of splines, equal to $k+p+1$.
-The argument `bs_degree` specifies the degrees of piecewise polynomials of the b-spline basis function
-if using the b-splines basis.
-This argument is only needed when using b-spline basis. 
 
-The function `ME.fcQR_IV.SIMEX` returns an ME.fcQR_IV.SIMEX class object 
-as a list that containing the following elements.
 
-1. coef.X: A Fourier_series or bspline_series object representing the function-valued coefficient parameter of the function-valued covariate.
-2. coef.Z: The estimated linear coefficients of the scalar covariates.
-3. coef.all: Original estimate of linear coefficients.
-4. function.basis.type:	Type of function basis used.
-5. basis.order:	Same as in the input arguments.
-6. t_interval: A 2-element vector representing an interval, describes the domain of the function-valued covariate.
-7. t_points: Sequence of the measurement (time) points.
-8. formula: Regression model.
-9. formula.Z:	Formula object containing only the scalar covariates.
-10. zlevels: Levels of the non-continuous scalar covariates.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The **MECfda** package provides the function `ME.fcQR_IV.SIMEX` for applying its bias-correction estimation method in scalar-on-function quantile regression. The arguments are described as follows:
+
+- **`data.Y` (Response Variable):**  
+  The response variable can be provided as an atomic vector, a one-column matrix, or a data frame. A one-column data frame with a column name is recommended for clarity.
+
+- **`data.W` (Measurement Data):**  
+  This argument corresponds to $W$, the observed measurement of $X$ in the statistical model. It should be provided as a data frame or matrix where each row represents a subject and each column corresponds to a measurement (time) point.
+
+- **`data.Z` (Scalar Covariates):**  
+  The scalar covariate data can be omitted (or set to `NULL`) if no scalar covariates are included in the model. Alternatively, it can be provided as an atomic vector (for a single scalar covariate) or as a matrix/data frame (for multiple scalar covariates). A data frame with column names is recommended.
+
+- **`data.M` (Instrumental Variable):**  
+  This argument provides the data for $M$, the instrumental variable. It should be supplied as a data frame or matrix where each row represents a subject and each column corresponds to a measurement (time) point.
+
+- **`tau` (Quantile Level):**  
+  Specifies the quantile level $\tau \in (0,1)$ for the quantile regression model. The default is 0.5.
+
+- **`t_interval` (Domain of the Function-Valued Covariate):**  
+  A two-element vector defining the interval over which the function-valued covariate is defined (default is `c(0,1)`, representing the interval $[0,1]$).
+
+- **`t_points` (Measurement Time Points):**  
+  Specifies the sequence of time points at which measurements are taken. The default is `NULL`.
+
+- **`formula.Z` (Scalar Covariate Formula):**  
+  This argument determines which components of `data.Z` are included in the model and how the scalar covariates are treated (i.e., as fixed or random effects).
+
+- **`basis.type`:** Indicates the type of basis function for the expansion. Options include `'Fourier'`, `'Bspline'`, and `'FPC'`, corresponding to the Fourier basis, b-spline basis, and functional principal component basis, respectively.
+
+- **`basis.order`:** Specifies the number of basis functions to use. For the Fourier basis (i.e., $\frac{1}{2},\ \sin(kt),\ \cos(kt)$ for $k = 1, \dots, p_f$), `basis.order` equals $p_f$. For the b-spline basis $\{B_{i,p}(x)\}_{i=-p}^{k}$, `basis.order` is set to $k+p+1$. For the FPC basis, `basis.order` represents the number of functional principal components.
+
+- **`bs_degree`:** Specifies the degree of the piecewise polynomials for the b-spline basis; this argument is only necessary when using the b-spline basis.
+
+The function `ME.fcQR_IV.SIMEX` returns an object of class `ME.fcQR_IV.SIMEX`, which is a list containing the following elements:
+
+1. **`coef.X`:** A `Fourier_series` or `bspline_series` object representing the function-valued coefficient parameter of the function-valued covariate.
+2. **`coef.Z`:** The estimated linear coefficients of the scalar covariates.
+3. **`coef.all`:** The original estimate of the linear coefficients.
+4. **`function.basis.type`:** The type of function basis used.
+5. **`basis.order`:** The number of basis functions used (as specified in the input).
+6. **`t_interval`:** A two-element vector representing the interval, which defines the domain of the function-valued covariate.
+7. **`t_points`:** The sequence of measurement (time) points.
+8. **`formula`:** The regression model.
+9. **`formula.Z`:** A formula object containing only the scalar covariates.
+10. **`zlevels`:** The levels of any categorical (non-continuous) scalar covariates.
+
+This comprehensive structure ensures that users can flexibly input their data and clearly specify the modeling framework for bias-correction in scalar-on-function quantile regression.
+
 
 ```{r iv.simex, eval = FALSE}
 rm(list = ls())
@@ -884,39 +900,52 @@ if the true measurements were available. The estimators of the regression parame
 are obtained by optimizing the resulting corrected loss function. 
 The resulting estimator of the regression parameters is shown to be consistent.
 
-The **MECfda** package provides a function, `ME.fcQR_CLS`,
-for the application of their bias correction estimation method. 
-The argument `data.Y`	is the response variable. 
-Input can be an atomic vector, a one-column matrix or data frame, 
-with the recommended form being a one-column data frame with column name. 
-The argument `data.W` is the data for $W$, the measurement of $X$, in the statistical model. 
-The input should be a 3-dimensional array, in which 
-each row represents a subject,
-each column represent a measurement (time) point,
-each layer represents an observation.
-The argument `data.Z` is the data for scalar covariates, 
-This argument can be no input or `NULL` when no scalar covariate is included in the model, 
-as an atomic vector when only one scalar covariate is included in the model, 
-or as a matrix or data frame. 
-The recommended form is a data frame with column names. 
-The argument `tau` is the quantile $\tau\in(0,1)$, with the default value 0.5.
-The argument `t_interval`	specifies the domain of the function-valued covariate, 
-and should be a 2-element vector, representing an interval. 
-The default is `c(0,1)`, representing interval $[0,1]$.
-The argument `t_points`	is the sequence of measurement (time) points, 
-default is `NULL`.
-The argument `grid_k`	is an atomic vector, in which each element is a candidate basis number.  
-The argument `grid_h`	is a non-zero-value atomic vector, in which each element is a candidate value for the tuning parameter.
-The argument `degree`	is used in to compute the derivative and integral, and the default value is 45, which is large enough for most scenario.
-The argument `observed_X`	is for estimating parametric variance, and the default value is `NULL`.
 
-The function returns an ME.fcQR_CLS class object. as a list that containing the following elements.
 
-1. estimated_beta_hat: Estimated coefficients from the corrected loss function (including the functional part)
-2. estimated_beta_t: Estimated functional curve
-3. SE_est: Estimated parametric variance. Returned only if observed_X is not `NULL`.
-4. estimated_Xbasis: The basis matrix used
-5. res_naive: Results of naive method
+
+
+
+The **MECfda** package provides a function, `ME.fcQR_CLS`, for implementing their bias-correction estimation method. Below is a description of its arguments and return values:
+
+- **`data.Y` (Response Variable):**  
+  The response variable can be provided as an atomic vector, a one-column matrix, or a data frame. The recommended format is a one-column data frame with a column name.
+
+- **`data.W` (Measurement Data for $W$):**  
+  This argument represents $W$, the observed measurement of $X$ in the statistical model. It should be provided as a three-dimensional array where each row corresponds to a subject, each column to a measurement (time) point, and each layer to an observation.
+
+- **`data.Z` (Scalar Covariates):**  
+  Scalar covariates can be omitted (or set to `NULL`) if no scalar covariates are included in the model, provided as an atomic vector for a single scalar covariate, or as a matrix or data frame for multiple covariates. The recommended format is a data frame with column names.
+
+- **`tau` (Quantile Level):**  
+  Specifies the quantile $\tau \in (0,1)$ to be used in the quantile regression model. The default value is 0.5.
+
+- **`t_interval` (Domain of the Function-Valued Covariate):**  
+  A two-element vector that specifies the domain (interval) of the function-valued covariate. The default is `c(0,1)`, representing the interval $[0,1]$.
+
+- **`t_points` (Measurement Time Points):**  
+  Specifies the sequence of measurement (time) points. The default is `NULL`.
+
+- **`grid_k` (Candidate Basis Numbers):**  
+  An atomic vector where each element is a candidate number for the basis functions.
+
+- **`grid_h` (Candidate Tuning Parameter Values):**  
+  A non-zero atomic vector where each element is a candidate value for the tuning parameter.
+
+- **`degree` (Degree for Derivative and Integral Calculations):**  
+  This argument is used when computing derivatives and integrals, with a default value of 45—which is sufficient for most scenarios.
+
+- **`observed_X` (Observed $X$ Data for Variance Estimation):**  
+  Used for estimating parametric variance; the default value is `NULL`.
+
+The function returns an object of class `ME.fcQR_CLS` (a list) containing the following elements:
+
+1. **`estimated_beta_hat`:** Estimated coefficients from the corrected loss function (including the functional component).
+2. **`estimated_beta_t`:** The estimated functional curve.
+3. **`SE_est`:** The estimated parametric variance (returned only if `observed_X` is not `NULL`).
+4. **`estimated_Xbasis`:** The basis matrix used in the estimation.
+5. **`res_naive`:** Results from the naive (uncorrected) method.
+
+
 
 ```{r cls, eval = FALSE}
 rm(list = ls())
@@ -967,33 +996,39 @@ They included the following additional assumptions:
 
 for $\forall t,s\in[0,1]$ and $i = 1,\dots,n$. 
 
-The **MECfda** package provides a function `ME.fcLR_IV` 
-for the application of their bias correction estimation method. 
-The argument `data.Y`	is the response variable, 
-which can be input as an atomic vector, a one-column matrix or data frame, 
-with the recommended form being a one-column data frame with column name. 
-The argument `data.W` is the data for $W$, the measurement of $X$, in the statistical model. 
-The input should be a dataframe or matrix, in which
-each row represents a subject. 
-each column represent a measurement (time) point. 
-The argument `data.M` is the data for $M$,
-the instrumental variable. 
-Input should be a dataframe or matrix.
-Each row represents a subject. 
-Each column represent a measurement (time) point.
-The argument `t_interval`	specifies the domain of the function-valued covariate, 
-and should be a 2-element vector, represents an interval. 
-The default value is `c(0,1)`, represent interval $[0,1]$.
-The argument `t_points`	is the sequence of the measurement (time) points, 
-and the default value is `NULL`.
-The argument `CI.bootstrap`	specifies whether to 
-return the confidence jinterval using the bootstrap method, 
-and the default is FALSE.
 
-The function returns a ME.fcLR_IV class object as a list that containing the following elements.
 
-1. beta_tW: Parameter estimates.
-2. CI: Confidence interval, returned only when CI.bootstrap is TRUE.
+
+
+
+
+
+The **MECfda** package provides the function `ME.fcLR_IV` for implementing their bias-correction estimation method. The arguments are as follows:
+
+- **`data.Y` (Response Variable):**  
+  The response variable can be provided as an atomic vector, a one-column matrix, or a data frame. The recommended format is a one-column data frame with a column name.
+
+- **`data.W` (Measurement Data for $W$):**  
+  This argument represents $W$, the observed measurement of $X$ in the statistical model. It should be provided as a data frame or matrix, where each row represents a subject and each column corresponds to a measurement (time) point.
+
+- **`data.M` (Instrumental Variable):**  
+  This argument provides the data for $M$, the instrumental variable. It should be provided as a data frame or matrix, with each row representing a subject and each column representing a measurement (time) point.
+
+- **`t_interval` (Domain of the Function-Valued Covariate):**  
+  A two-element vector that specifies the domain (interval) of the function-valued covariate. The default is `c(0,1)`, representing the interval $[0,1]$.
+
+- **`t_points` (Measurement Time Points):**  
+  Specifies the sequence of measurement (time) points. The default is `NULL`.
+
+- **`CI.bootstrap` (Bootstrap Confidence Interval):**  
+  A logical flag indicating whether to return a confidence interval using the bootstrap method. The default is `FALSE`.
+
+The function returns an object of class `ME.fcLR_IV`, which is a list containing the following elements:
+
+1. **`beta_tW`:** Parameter estimates.
+2. **`CI`:** Confidence interval, which is returned only if `CI.bootstrap` is `TRUE`.
+
+
 
 
 ```{r lriv, eval = FALSE}
@@ -1003,6 +1038,11 @@ res = ME.fcLR_IV(data.Y = MECfda.data.sim.0.3$Y,
                  data.W = MECfda.data.sim.0.3$W,
                  data.M = MECfda.data.sim.0.3$M)
 ```
+
+# Simulated Data Generation
+
+The package **MECfda** includes some functions to generate simulated data 
+to test the functions in the package. 
 
 # References
 

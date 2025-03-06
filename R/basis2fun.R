@@ -9,8 +9,9 @@
 #' @export
 #' @author Heyang Ji
 #' @details
-#' When applied to \code{\link{bspline_series}} object, equivalent to \code{\link{bsplineSeries2fun}}.\cr
-#' When applied to \code{\link{Fourier_series}} object, equivalent to \code{\link{FourierSeries2fun}}.
+#' When applied to \code{\link{bspline_series}}      object, equivalent to \code{\link{bsplineSeries2fun}}.\cr
+#' When applied to \code{\link{Fourier_series}}      object, equivalent to \code{\link{FourierSeries2fun}}.\cr
+#' When applied to \code{\link{numericBasis_series}} object, equivalent to \code{\link{numericBasisSeries2fun}}.
 basis2fun = function(object,x) UseMethod("basis2fun")
 #' @rdname basis2fun
 #' @export
@@ -28,4 +29,13 @@ setMethod("basis2fun",
           signature(object="Fourier_series",
                     x = "numeric"),
           function(object,x) FourierSeries2fun(object,x)
+)
+
+#' @rdname basis2fun
+#' @export
+# basis2fun.numericBasis_series = function(object,x) numericBasisSeries2fun(object,x)
+setMethod("basis2fun",
+          signature(object="numericBasis_series",
+                    x = "numeric"),
+          function(object,x) numericBasisSeries2fun(object,x)
 )

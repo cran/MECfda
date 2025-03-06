@@ -8,7 +8,7 @@
 #' at some certain point(s).
 #'
 #' @param object an object of \code{\link{Fourier_series}} class.
-#' @param x Value of $x$.
+#' @param x Value of \eqn{x}.
 #'
 #' @return A numeric atomic vector
 #' @export

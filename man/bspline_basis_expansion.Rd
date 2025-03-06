@@ -17,7 +17,7 @@ bspline_basis_expansion(object, n_splines, bs_degree)
 \item{bs_degree}{the degree of the piecewise polynomial of the b-splines. See \code{degree} in \code{\link[splines]{bs}}.}
 }
 \value{
-Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}
+Returns a numeric matrix, \eqn{(b_{ik})_{n\times p}}, where \eqn{b_{ik} = \int_\Omega f(t)\rho_k(t) dt}.
 }
 \description{
 For a function \eqn{f(t), t\in\Omega}, and a basis function sequence \eqn{\{\rho_k\}_{k\in\kappa}},

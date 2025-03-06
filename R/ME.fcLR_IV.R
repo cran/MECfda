@@ -14,11 +14,11 @@
 #' Each row represents a subject. Each column represent a measurement (time) point.
 #' @param t_interval A 2-element vector, represents an interval,
 #' means the domain of the functional covariate.
-#' Default is c(0,1), represent interval \eqn{[0,1]}.
+#' Default is \code{c(0,1)}, represent interval \eqn{[0,1]}.
 #' @param t_points Sequence of the measurement (time) points,
-#' default is NULL.
+#' default is \code{NULL}.
 #' @param CI.bootstrap Whether to return the confidence using bootstrap method.
-#' Default is FALSE.
+#' Default is \code{FALSE}.
 #'
 #' @return Returns a ME.fcLR_IV class object. It is a list that contains the following elements.
 #'    \item{beta_tW}{Parameter estimates.}

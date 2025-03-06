@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot.bspline_series.R
 \name{plot,bspline_series-method}
 \alias{plot,bspline_series-method}
-\title{Plot b-splines baisi summation series.}
+\title{Plot b-splines basis summation series.}
 \usage{
 \S4method{plot}{bspline_series}(x)
 }
@@ -13,7 +13,7 @@
 No return value. Generate a scatter plot.
 }
 \description{
-Plot b-splines baisi summation series.
+Plot b-splines basis summation series.
 }
 \examples{
 bsb = bspline_basis(
